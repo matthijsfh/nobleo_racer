@@ -9,7 +9,7 @@ from ...linear_math import Transform
 class SimpleBot(Bot):
     @property
     def name(self):
-        return "SimpleBot"
+        return "MatthijsRacer"
 
     @property
     def contributor(self):
