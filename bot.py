@@ -134,8 +134,6 @@ class MatthijsRacer(Bot):
             _tmpRacecar = self.racecar.getRaceCarPosition()
             _tmpCaravanVector = self.racecar.getRaceCarOldPosition()
             
-            # _tmpCaravanAngle = _tmpTrekhaak.angle_to(_tmpCaravanVector) / math.pi * 180
-
             tmp = Vector2(_tmpTrekhaak- _tmpCaravanVector)
             _tmpCaravanAngle = math.atan2(tmp.y, tmp.x) / math.pi * 180
             
