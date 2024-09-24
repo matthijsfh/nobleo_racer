@@ -12,8 +12,8 @@ import time
 from .caravan.caravan import caravan
 from .racecar.racecar import racecar
 
-DEBUG = True
-DRAW_FLAME = False
+# DEBUG = True
+DEBUG = False
 DRAW_CARAVAN = True
 
 class MatthijsRacer(Bot):
@@ -38,12 +38,9 @@ class MatthijsRacer(Bot):
         self.color = (0xff, 0x80, 0)
         self._last_position = 0
         
-        
-        if DEBUG:
-            self._font = pygame.font.SysFont(None, 24)
-            self._black = pygame.Color(0, 0, 0, 50)
-            self._green = pygame.Color(0, 255, 0, 50)
-            self._red = pygame.Color(255, 0, 0, 50)
+        self._black = pygame.Color(0, 0, 0, 50)
+        self._green = pygame.Color(0, 255, 0, 50)
+        self._red = pygame.Color(255, 0, 0, 50)
          
         if DRAW_CARAVAN:
             self._caravan = pygame.image.load(
@@ -79,10 +76,10 @@ class MatthijsRacer(Bot):
             # self.racecar.setPosition(position)
             # self.racecar.calculateTrekhaak()
        
-        self.racecar.setPosition(position)
-        self.racecar.calculateTrekhaak()
+        self.racecar.setPosition(position, DEBUG)
+        self.racecar.calculateTrekhaak(DEBUG)
 
-        self.racecar.updateOldPosition(position)
+        self.racecar.updateOldPosition(position, DEBUG)
 
 
         target = self.track.lines[next_waypoint]
@@ -91,22 +88,12 @@ class MatthijsRacer(Bot):
         # calculate the target in the frame of the robot
         target = position.inverse() * target
 
-
-        #----------------------------------------------------------------------
-        # Update the caravan
-        #----------------------------------------------------------------------
-        # self.caravan.updateCarPosition(position)
-
-        
-        
         
         #----------------------------------------------------------------------
         # calculate the angle to the target
         #----------------------------------------------------------------------
         angle = target.as_polar()[1]
         
-
-
 
         #----------------------------------------------------------------------
         # calculate the throttle
@@ -118,15 +105,11 @@ class MatthijsRacer(Bot):
             throttle = -1
 
     
+        #----------------------------------------------------------------------
         # Accelerate when long straight
-        
         # Calc brake distance
-        
         # Accelerate when leaving corner
-
-
-        if DRAW_FLAME:
-            self._last_position = position
+        #----------------------------------------------------------------------
 
         #----------------------------------------------------------------------
         # calculate the steering
@@ -138,19 +121,11 @@ class MatthijsRacer(Bot):
         
         return throttle, steering
 
-    def draw(self, map_scaled, zoom):
 
-        # if DRAW_FLAME:
-        #     flame_pos = self._last_position
-        #     flame_zoom = 0.4 * zoom
-        #     flame_angle = flame_pos.M.angle
-        #     flame_image = pygame.transform.rotozoom(
-        #         self._flame, -math.degrees(flame_angle), flame_zoom)
-        #         # self._flame, -math.degrees(flame_angle) - 45, flame_zoom)
-        #     flame_rect = flame_image.get_rect(
-        #         center=(flame_pos.p - flame_pos.M * Vector2(40, 0)) * zoom)
-        #     map_scaled.blit(flame_image, flame_rect)
-        
+    #----------------------------------------------------------------------
+    # Draw 
+    #----------------------------------------------------------------------
+    def draw(self, map_scaled, zoom):
         
         if DRAW_CARAVAN:
         
@@ -164,9 +139,9 @@ class MatthijsRacer(Bot):
             tmp = Vector2(_tmpTrekhaak- _tmpCaravanVector)
             _tmpCaravanAngle = math.atan2(tmp.y, tmp.x) / math.pi * 180
             
-            print(f"Caravan abs angle : {_tmpCaravanAngle}")
+            if (DEBUG):
+                print(f"Caravan abs angle : {_tmpCaravanAngle}")
 
-            
             pygame.draw.line(map_scaled, self._green,
                               _tmpTrekhaak * zoom,
                               _tmpRacecar  * zoom, 2) 
@@ -179,23 +154,9 @@ class MatthijsRacer(Bot):
             caravanZoom = 0.4 * zoom
             caravan_image = pygame.transform.rotozoom(self._caravan, -_tmpCaravanAngle, caravanZoom)
             
-            # Quick fix
             angle = Transform(_tmpCaravanAngle /180 * math.pi, [_tmpTrekhaak[0], _tmpTrekhaak[1]])
-            
-            print(angle)
 
-            # caravan_rect = caravan_image.get_rect(center=(angle.p + angle.M * Vector2(20, 0)) * zoom)
             caravan_rect = caravan_image.get_rect(center=(angle.p + angle.M * Vector2(0, 0)) * zoom)
-            
-            # #caravan_center = _tmpTrekhaak - Vector2(tmp_rotation * Vector2(40,0))
-            
-            # caravan_rect = caravan_image.get_rect(
-                # center=(caravan_center * zoom))
-                # center=(flame_pos.p - flame_pos.M * Vector2(40, 0)) * zoom)
-            
             map_scaled.blit(caravan_image, caravan_rect)
-        
-        
-        # time.sleep(0.05)
         
         return
