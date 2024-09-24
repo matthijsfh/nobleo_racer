@@ -23,7 +23,7 @@ class MatthijsRacer(Bot):
         angle = target.as_polar()[1]
 
         # calculate the throttle
-        target_velocity = 50
+        target_velocity = 70
         if velocity.length() < target_velocity:
             throttle = 1
         else:
