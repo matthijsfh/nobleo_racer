@@ -22,7 +22,7 @@ class racecar:
     def calculateTrekhaak(self, DEBUG = False):
         self._trekhaak.M.fromangle(0.0)
         
-        self._trekhaakOffset = Vector2(-25,0)
+        self._trekhaakOffset = Vector2(-20,0)
         self._trekhaak.p = self._position.M * self._trekhaakOffset + self._position.p
         
         if (DEBUG):
