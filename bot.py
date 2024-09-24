@@ -142,15 +142,15 @@ class MatthijsRacer(Bot):
             if (DEBUG):
                 print(f"Caravan abs angle : {_tmpCaravanAngle}")
 
-            pygame.draw.line(map_scaled, self._green,
-                              _tmpTrekhaak * zoom,
-                              _tmpRacecar  * zoom, 2) 
-    
-            pygame.draw.line(map_scaled, self._red,
-                              _tmpTrekhaak * zoom,
-                              _tmpCaravanVector  * zoom, 2) 
+                pygame.draw.line(map_scaled, self._green,
+                                  _tmpTrekhaak * zoom,
+                                  _tmpRacecar  * zoom, 2) 
         
+                pygame.draw.line(map_scaled, self._red,
+                                  _tmpTrekhaak * zoom,
+                                  _tmpCaravanVector  * zoom, 2) 
         
+            # Plot the caravan.        
             caravanZoom = 0.4 * zoom
             caravan_image = pygame.transform.rotozoom(self._caravan, -_tmpCaravanAngle, caravanZoom)
             
