@@ -8,6 +8,7 @@ import pygame
 import math
 import itertools
 import time
+import copy
 
 from .caravan.caravan import caravan
 from .racecar.racecar import racecar
@@ -15,6 +16,7 @@ from .racecar.racecar import racecar
 # DEBUG = True
 DEBUG = False
 DRAW_CARAVAN = True
+DEBUG_TRACK = True
 
 class MatthijsRacer(Bot):
     @property
@@ -41,6 +43,9 @@ class MatthijsRacer(Bot):
         self._black = pygame.Color(0, 0, 0, 50)
         self._green = pygame.Color(0, 255, 0, 50)
         self._red = pygame.Color(255, 0, 0, 50)
+        
+        self.max_velocity = 500.0
+        self.min_velocity = 140.0
          
         if DRAW_CARAVAN:
             self._caravan = pygame.image.load(
@@ -50,20 +55,99 @@ class MatthijsRacer(Bot):
         self.caravan = caravan("Kip", "De Lux", 1999)
         self.racecar = racecar()
         
+        print(self.track.lines)
+        
         #----------------------------------------------------------------------
         # Startup stuff. Calculate the track and vectors
         #----------------------------------------------------------------------
+        # 47
+        self.sectionCount = len(self.track.lines)
+
         # All coordinates including last one + list + next one.
+        # Dus 2 langer dan sectionCount
         self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
-        self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
         
-        # Calculate angles for each vector
+        print(len(self.coordinates))
+
+        # Dus 1 langer dan sectionCount
+        self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
+
+        # Calculate angles for each section
         self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
 
-        if (DEBUG):        
-            for vector, angle in zip(self.relativeVectors, self.absAngles):
-                print(f"Vector: {vector}, Angle: {angle:.2f} deg")
+        # Lenght of each section
+        self.absLength = [math.sqrt(x**2 + y**2) for x, y in self.relativeVectors]
         
+        if (DEBUG_TRACK):        
+            for index, (vector, angle) in enumerate(zip(self.relativeVectors, self.absAngles)):
+                print(f"Index: {index}, Vector: {vector}, Angle: {angle:.2f} deg")
+
+        #----------------------------------------------------------------------
+        # Label each section
+        # Recht, Flauwe Bocht L, Scherpe Bocht L, Flauwe Bocht R, Scherp Bocht R
+        # RCH, FBL, SBL, FBR, SBR
+        #----------------------------------------------------------------------
+        # index 0 is laatste sectie vorige ronde.
+        # index 1 is de eerste van de ronde. 
+        # index sectionCount is herhaling van sectie 1
+
+        # Constants
+        self.rechtStuk = 100        # pixels rechtdoor
+        self.flauwBocht = 10        # graden tov vorige sectie. Tot 30 graden. Daarboven scherp
+        self.scherpeBocht = 40        # graden tov vorige sectie. Tot 30 graden. Daarboven scherp
+
+        # Ranking of each section
+        self.curveType = ["None"] * self.sectionCount
+        
+        # door de opzet van de lijst, is section 1 ook het 1e vak om te rijden.
+        # 0 & self.sectionCount+1 worden allen gebruikt voor berekenen hoeken.
+        
+        for index in range(0, self.sectionCount):
+            
+            # Een lang stuk --> Recht
+            if (self.absLength[index] >= self.rechtStuk):
+                # print(f"Index : {index} = recht ({self.absLength[index]}")
+                self.curveType[index] = "RCH"
+        
+            else:
+                tmp_angle = self.absAngles[index] - self.absAngles[index - 1]
+                
+                if (tmp_angle >= self.scherpeBocht):
+                    self.curveType[index] = "SBR"
+                elif (tmp_angle >= self.flauwBocht):
+                    self.curveType[index] = "FBR"
+                elif (tmp_angle >= -self.flauwBocht):
+                    self.curveType[index] = "RCH"
+                elif (tmp_angle >= -self.scherpeBocht):
+                    self.curveType[index] = "FBL"
+                else:
+                    self.curveType[index] = "SBL"
+                    
+            print(f"Index : {index} = {self.curveType[index]}")                    
+        
+            
+        # time.sleep(10)
+        
+    def computeBrakeDistance(self, sectionIndex : int):
+        distance = (self.tmp_position - self.coordinates[sectionIndex]).length()
+        
+        return distance
+        
+    def computeSectionVelocity(self, sectionIndex):
+        result = 100
+        
+        # print(sectionIndex)
+        
+        if (self.curveType[sectionIndex] == 'RCH'):
+            result = 450;
+
+        if ((self.curveType[sectionIndex] == 'FBR') or (self.curveType[sectionIndex] == 'FBL')) :
+            result = 200;
+
+        if ((self.curveType[sectionIndex] == 'SBR') or (self.curveType[sectionIndex] == 'SBL')):
+            result = 100;
+        
+        return result
 
     def compute_commands(self, next_waypoint: int, position: Transform, velocity: Vector2) -> Tuple:
         #----------------------------------------------------------------------
@@ -72,14 +156,12 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         if (self.firstPass):
             self.firstPass = False;
-            
-            # self.racecar.setPosition(position)
-            # self.racecar.calculateTrekhaak()
        
         self.racecar.setPosition(position, DEBUG)
         self.racecar.calculateTrekhaak(DEBUG)
-
         self.racecar.updateOldPosition(position, DEBUG)
+
+        # self._position_p = position.
 
 
         target = self.track.lines[next_waypoint]
@@ -87,7 +169,6 @@ class MatthijsRacer(Bot):
         # print (target)
         # calculate the target in the frame of the robot
         target = position.inverse() * target
-
         
         #----------------------------------------------------------------------
         # calculate the angle to the target
@@ -98,12 +179,45 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         # calculate the throttle
         #----------------------------------------------------------------------
-        target_velocity = 100
-        if velocity.length() < target_velocity:
+        # if velocity.length() < self.min_velocity:
+        #     throttle = 1
+        # else:
+        #     throttle = -1
+
+        
+        _sectionMaxVelocity = self.computeSectionVelocity(next_waypoint)
+        _sectionExitVelocity = self.computeSectionVelocity((next_waypoint + 1) % self.sectionCount)
+
+        _sectionExitVelocity2 = self.computeSectionVelocity((next_waypoint + 2) % self.sectionCount)
+
+        tmpTargetVelocity = _sectionMaxVelocity;
+        
+        # Check if braking is needed at all.
+        if (_sectionExitVelocity < _sectionMaxVelocity) or (_sectionExitVelocity2 < _sectionMaxVelocity):
+            
+            self.tmp_position = Vector2(position.p)
+            self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
+            
+            if (self.absDistToExit < 300):
+                tmpTargetVelocity = min(_sectionExitVelocity, _sectionExitVelocity2)
+                
+        else:
+            self.absDistToExit = -1;
+                    
+                
+        print(f"{next_waypoint}, "
+              f"Now : {self.curveType[next_waypoint]} ,"
+              f"Next : {self.curveType[(next_waypoint + 1) % self.sectionCount]} ,"
+              f"velocity max : {_sectionMaxVelocity}, "
+              f"exit = {_sectionExitVelocity}, "
+              f"brakedist = {self.absDistToExit:.0f}, "
+              f"Vel = {tmpTargetVelocity:.0f}" )
+
+
+        if velocity.length() < tmpTargetVelocity:
             throttle = 1
         else:
             throttle = -1
-
     
         #----------------------------------------------------------------------
         # Accelerate when long straight

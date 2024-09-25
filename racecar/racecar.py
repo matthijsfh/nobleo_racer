@@ -7,7 +7,7 @@ class racecar:
     def __init__(self):
         self._position      = Transform(None, [0,0])
         self._trekhaak      = Transform(None, [0,0])
-        self._oldposition   = [Vector2(0, 0) for _ in range(50)]
+        self._oldposition   = [Vector2(0, 0) for _ in range(30)]
         return
     
 
