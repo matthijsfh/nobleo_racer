@@ -98,33 +98,50 @@ class MatthijsRacer(Bot):
 
         # Ranking of each section
         self.curveType = ["None"] * self.sectionCount
+        self.curveAngleChange= ["None"] * self.sectionCount
         
         # door de opzet van de lijst, is section 1 ook het 1e vak om te rijden.
         # 0 & self.sectionCount+1 worden allen gebruikt voor berekenen hoeken.
         
-        for index in range(0, self.sectionCount):
+        # for index in range(0, self.sectionCount):
             
+        #     # Een lang stuk --> Recht
+        #     if (self.absLength[index] >= self.rechtStuk):
+        #         # print(f"Index : {index} = recht ({self.absLength[index]}")
+        #         self.curveType[index] = "RCH"
+        
+        #     else:
+        #         tmp_angle = self.absAngles[index] - self.absAngles[index - 1]
+                
+        #         if (tmp_angle >= self.scherpeBocht):
+        #             self.curveType[index] = "SBR"
+        #         elif (tmp_angle >= self.flauwBocht):
+        #             self.curveType[index] = "FBR"
+        #         elif (tmp_angle >= -self.flauwBocht):
+        #             self.curveType[index] = "RCH"
+        #         elif (tmp_angle >= -self.scherpeBocht):
+        #             self.curveType[index] = "FBL"
+        #         else:
+        #             self.curveType[index] = "SBL"
+                    
+        #     print(f"Index : {index} = {self.curveType[index]}")                    
+            
+        for index in range(0, self.sectionCount):
             # Een lang stuk --> Recht
             if (self.absLength[index] >= self.rechtStuk):
                 # print(f"Index : {index} = recht ({self.absLength[index]}")
                 self.curveType[index] = "RCH"
+                self.curveAngleChange[index] = 0
         
             else:
                 tmp_angle = self.absAngles[index] - self.absAngles[index - 1]
                 
-                if (tmp_angle >= self.scherpeBocht):
-                    self.curveType[index] = "SBR"
-                elif (tmp_angle >= self.flauwBocht):
-                    self.curveType[index] = "FBR"
-                elif (tmp_angle >= -self.flauwBocht):
-                    self.curveType[index] = "RCH"
-                elif (tmp_angle >= -self.scherpeBocht):
-                    self.curveType[index] = "FBL"
-                else:
-                    self.curveType[index] = "SBL"
+                self.curveType[index] = "TRN"
+                self.curveAngleChange[index] = tmp_angle
                     
-            print(f"Index : {index} = {self.curveType[index]}")                    
-        
+            print(f"Index : {index} = {self.curveType[index]}, "
+                  f"Angle : {self.curveAngleChange[index]:.0f}")                    
+            
             
         # time.sleep(10)
         
@@ -146,6 +163,22 @@ class MatthijsRacer(Bot):
 
         if ((self.curveType[sectionIndex] == 'SBR') or (self.curveType[sectionIndex] == 'SBL')):
             result = 100;
+        
+        return result
+    
+    
+    def computeSectionVelocityAngles(self, sectionIndex):
+        fullSpeed = 300;
+        
+        print(f"Index : {sectionIndex}, {self.curveAngleChange[sectionIndex]:.0f}")    
+        
+        _angleChange = (abs(self.curveAngleChange[sectionIndex]) / 90.0)
+
+        print(f"Change : {_angleChange:.0f}")    
+
+        result = fullSpeed * max((1 -_angleChange), 0.1)
+        
+        # result = fullSpeed
         
         return result
 
@@ -185,33 +218,37 @@ class MatthijsRacer(Bot):
         #     throttle = -1
 
         
-        _sectionMaxVelocity = self.computeSectionVelocity(next_waypoint)
-        _sectionExitVelocity = self.computeSectionVelocity((next_waypoint + 1) % self.sectionCount)
-
-        _sectionExitVelocity2 = self.computeSectionVelocity((next_waypoint + 2) % self.sectionCount)
+        # _sectionMaxVelocity = self.computeSectionVelocity(next_waypoint)
+        # _sectionExitVelocity = self.computeSectionVelocity((next_waypoint + 1) % self.sectionCount)
+        # _sectionExitVelocity2 = self.computeSectionVelocity((next_waypoint + 2) % self.sectionCount)
+       
+        _sectionMaxVelocity = self.computeSectionVelocityAngles(next_waypoint)
+        _sectionExitVelocity = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
 
         tmpTargetVelocity = _sectionMaxVelocity;
         
         # Check if braking is needed at all.
-        if (_sectionExitVelocity < _sectionMaxVelocity) or (_sectionExitVelocity2 < _sectionMaxVelocity):
+        # if (_sectionExitVelocity < _sectionMaxVelocity) or (_sectionExitVelocity2 < _sectionMaxVelocity):
+        if (_sectionExitVelocity < _sectionMaxVelocity):
             
             self.tmp_position = Vector2(position.p)
             self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
             
             if (self.absDistToExit < 300):
-                tmpTargetVelocity = min(_sectionExitVelocity, _sectionExitVelocity2)
+                # tmpTargetVelocity = min(_sectionExitVelocity, _sectionExitVelocity2)
+                tmpTargetVelocity = _sectionExitVelocity
                 
         else:
             self.absDistToExit = -1;
                     
                 
-        print(f"{next_waypoint}, "
-              f"Now : {self.curveType[next_waypoint]} ,"
-              f"Next : {self.curveType[(next_waypoint + 1) % self.sectionCount]} ,"
-              f"velocity max : {_sectionMaxVelocity}, "
-              f"exit = {_sectionExitVelocity}, "
-              f"brakedist = {self.absDistToExit:.0f}, "
-              f"Vel = {tmpTargetVelocity:.0f}" )
+        # print(f"{next_waypoint}, "
+        #       f"Now : {self.curveType[next_waypoint]} ,"
+        #       f"Next : {self.curveType[(next_waypoint + 1) % self.sectionCount]} ,"
+        #       f"velocity max : {_sectionMaxVelocity:.0f}, "
+        #       f"exit = {_sectionExitVelocity:.0f}, "
+        #       f"brakedist = {self.absDistToExit:.0f}, "
+        #       f"Vel = {tmpTargetVelocity:.0f}" )
 
 
         if velocity.length() < tmpTargetVelocity:
