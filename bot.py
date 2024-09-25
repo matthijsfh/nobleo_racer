@@ -137,6 +137,10 @@ class MatthijsRacer(Bot):
                 tmp_angle = self.absAngles[index] - self.absAngles[index - 1]
                 
                 self.curveType[index] = "TRN"
+                
+                if (tmp_angle > 180):
+                    tmp_angle = tmp_angle - 360
+                
                 self.curveAngleChange[index] = tmp_angle
                     
             print(f"Index : {index} = {self.curveType[index]}, "
@@ -168,17 +172,24 @@ class MatthijsRacer(Bot):
     
     
     def computeSectionVelocityAngles(self, sectionIndex):
-        fullSpeed = 300;
+        fullSpeed = 400;
         
-        print(f"Index : {sectionIndex}, {self.curveAngleChange[sectionIndex]:.0f}")    
         
-        _angleChange = (abs(self.curveAngleChange[sectionIndex]) / 90.0)
+        # Werkt lekker. Nog wel erg langzaam door extreme bochten.
+        # _angleEffect = 0.8 * (abs(self.curveAngleChange[sectionIndex]) / 90.0)
+        
+        # Driften en gaat mis bij laat
+        # _angleEffect = 0.8 * (abs(self.curveAngleChange[sectionIndex]) / 120.0)
+        
+        # Driften maar gaat goed. Kantje boort bij scherpe bochten
+        # _angleEffect = (abs(self.curveAngleChange[sectionIndex]) / 120.0)
 
-        print(f"Change : {_angleChange:.0f}")    
+        # Driften maar gaat goed. Kantje boort bij scherpe bochten
+        _angleEffect = 1.2 * (abs(self.curveAngleChange[sectionIndex]) / 100.0)
 
-        result = fullSpeed * max((1 -_angleChange), 0.1)
-        
-        # result = fullSpeed
+        print(f"Index : {sectionIndex}, {self.curveAngleChange[sectionIndex]:.1f}, angleEffect = {_angleEffect:.1f}")    
+
+        result = fullSpeed * max((1 -_angleEffect), 0.4)
         
         return result
 
@@ -222,21 +233,25 @@ class MatthijsRacer(Bot):
         # _sectionExitVelocity = self.computeSectionVelocity((next_waypoint + 1) % self.sectionCount)
         # _sectionExitVelocity2 = self.computeSectionVelocity((next_waypoint + 2) % self.sectionCount)
        
-        _sectionMaxVelocity = self.computeSectionVelocityAngles(next_waypoint)
-        _sectionExitVelocity = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
+        _sectionMaxVelocity   = self.computeSectionVelocityAngles(next_waypoint)
+        _sectionExitVelocity  = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
+        _sectionExitVelocity2 = self.computeSectionVelocityAngles((next_waypoint + 2) % self.sectionCount)
+        
+        _minVelocityAhead = min(_sectionExitVelocity,_sectionExitVelocity2)
 
         tmpTargetVelocity = _sectionMaxVelocity;
         
         # Check if braking is needed at all.
         # if (_sectionExitVelocity < _sectionMaxVelocity) or (_sectionExitVelocity2 < _sectionMaxVelocity):
-        if (_sectionExitVelocity < _sectionMaxVelocity):
-            
+        # if (_sectionExitVelocity < _sectionMaxVelocity):
+        if (_minVelocityAhead < _sectionMaxVelocity):
+
             self.tmp_position = Vector2(position.p)
             self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
             
-            if (self.absDistToExit < 300):
+            if (self.absDistToExit < 400):
                 # tmpTargetVelocity = min(_sectionExitVelocity, _sectionExitVelocity2)
-                tmpTargetVelocity = _sectionExitVelocity
+                tmpTargetVelocity = _minVelocityAhead
                 
         else:
             self.absDistToExit = -1;
