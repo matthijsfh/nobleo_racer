@@ -238,49 +238,13 @@ class MatthijsRacer(Bot):
         allowed_velocity2 = _sectionExitVelocity2 + absDistToExit2 / 2.5     
         allowed_velocity3 = _sectionExitVelocity3 + absDistToExit3 / 2.5  
 
-        
-        # _minVelocityAhead = _sectionExitVelocity1
-        
-        # tmpTargetVelocity = _sectionMaxVelocity;
-        
         tmpTargetVelocity = min(min(min(allowed_velocity1, _sectionMaxVelocity), allowed_velocity2), allowed_velocity3)
 
-
-        # _minVelocityAhead = min(_sectionExitVelocity,_sectionExitVelocity2)
-        # _minVelocityAhead = min(min(_sectionExitVelocity1,_sectionExitVelocity2), _sectionExitVelocity3)
-
-        # tmpTargetVelocity = _sectionMaxVelocity;
-        
-        # # Check if braking is needed for THIS corner and the NEXT
-        # if (_minVelocityAhead < _sectionMaxVelocity):
-
-        #     self.tmp_position = Vector2(position.p)
-        #     # self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
-            
-        #     absDistToExit1 = self.computeBrakeDistance((next_waypoint + 1) % self.sectionCount)
-        #     # self.absDistToExit2 = self.computeBrakeDistance((next_waypoint + 2) % self.sectionCount)            
-            
-        #     # Geschat: 100 / sec = 2 per frame
-        #     # 2 remt iets te snel. 2.5 is haalbaar.
-            
-        #     # allowd_velocity = _minVelocityAhead + self.absDistToExit / 2.5      
-        #     # allowd_velocity = _minVelocityAhead + self.absDistToExit / 3      
-        #     # tmpTargetVelocity = min(allowd_velocity, _sectionMaxVelocity)
-
-
-        #     allowd_velocity1 = _minVelocityAhead + absDistToExit1 / 3      
-        #     allowd_velocity2 = _minVelocityAhead + absDistToExit2 / 3      
-        #     allowd_velocity3 = _minVelocityAhead + absDistToExit3 / 3      
-            
-        #     tmpTargetVelocity = min(allowd_velocity1, _sectionMaxVelocity)
-            
-        # else:
-        #     self.absDistToExit = -1;
                  
         # Extra ga bij uitkomen van de bocht.
         # Niet volgas want dan slipt auto weg. Zit nog in de bocht tenslotte
-        # if (_sectionMaxVelocity < _minVelocityAhead):
-        #     tmpTargetVelocity = _sectionExitVelocity * 0.7
+        if (tmpTargetVelocity < _sectionExitVelocity1):
+            tmpTargetVelocity = _sectionExitVelocity1 * 0.7
             
                 
         if (DEBUG_TRACK):
