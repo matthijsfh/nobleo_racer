@@ -80,7 +80,7 @@ class MatthijsRacer(Bot):
 
         # All coordinates including last one + list + next one.
         # Dus 2 langer dan sectionCount
-        self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
+        self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]] + [self.track.lines[1]] + [self.track.lines[3]]
         
         print(len(self.coordinates))
 
@@ -146,13 +146,14 @@ class MatthijsRacer(Bot):
     def computeBrakeDistance(self, sectionIndex : int, counter : int):
         distance = (self.tmp_position - self.coordinates[(sectionIndex + 1) % self.sectionCount]).length()
 
-        if (counter == 2):
+        if (counter >= 2):
             distance = distance + (self.coordinates[(sectionIndex + 1) % self.sectionCount] - 
                                    self.coordinates[(sectionIndex + 2) % self.sectionCount]).length()
 
-        if (counter == 3):
+        if (counter >= 3):
             distance = distance + (self.coordinates[(sectionIndex + 2) % self.sectionCount] - 
                                    self.coordinates[(sectionIndex + 3) % self.sectionCount]).length()
+
         
         return distance
         
@@ -174,7 +175,8 @@ class MatthijsRacer(Bot):
     
     
     def computeSectionVelocityAngles(self, sectionIndex):
-        fullSpeed = 400;
+        # fullSpeed = 400;
+        fullSpeed = 450;
         # fullSpeed = 200;
 
         # Driften maar gaat goed. Kantje boort bij scherpe bochten
