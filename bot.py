@@ -10,19 +10,23 @@ import itertools
 import time
 import copy
 
+import json
+import socket
+
 from .caravan.caravan import caravan
 from .racecar.racecar import racecar
 
 DRAW_CARAVAN = True
 
-# DEBUG = True
-# DEBUG_TRACK = True
-# DEBUG_CURVES= True
-
 DEBUG = False
-DEBUG_TRACK = False
-DEBUG_CURVES= False
+DEBUG_TRACK = True
+DEBUG_CURVES= True
 DEBUG_CAR = False
+
+# DEBUG = False
+# DEBUG_TRACK = False
+# DEBUG_CURVES= False
+# DEBUG_CAR = False
 
 
 class MatthijsRacer(Bot):
@@ -61,6 +65,8 @@ class MatthijsRacer(Bot):
         self.firstPass = True    
         self.caravan = caravan("Kip", "De Lux", 1999)
         self.racecar = racecar()
+        
+        self.time = 0
         
         if (DEBUG_TRACK): 
             print(self.track.lines)
@@ -160,14 +166,23 @@ class MatthijsRacer(Bot):
     
     def computeSectionVelocityAngles(self, sectionIndex):
         fullSpeed = 400;
+        # fullSpeed = 100;
 
         # Driften maar gaat goed. Kantje boort bij scherpe bochten
-        _angleEffect = 1.3 * (abs(self.curveAngleChange[sectionIndex]) / 100.0)
+        # _angleEffect = 1.3 * (abs(self.curveAngleChange[sectionIndex]) / 100.0)
+
+        # From exel
+        A = 0
+        B = 0.013
+        x = abs(self.curveAngleChange[sectionIndex])
+
+        _angleEffect = A * x**2 + B * x
 
         if (DEBUG_CURVES):
-            print(f"Index : {sectionIndex}, {self.curveAngleChange[sectionIndex]:.1f}, angleEffect = {_angleEffect:.1f}")    
+            # print(f"Index : {sectionIndex}, velocity = {self.absVelocity:.1f}, angleEffect = {_angleEffect:.1f}")    
+            print(f"Index : {sectionIndex}, curveAngleChange = {self.curveAngleChange[sectionIndex]:.1f}, angleEffect = {_angleEffect:.3f}")    
 
-        result = fullSpeed * max((1 -_angleEffect), 0.3)
+        result = fullSpeed * max((1 -_angleEffect), 0.1)
         
         return result
 
@@ -183,12 +198,20 @@ class MatthijsRacer(Bot):
         self.racecar.calculateTrekhaak(DEBUG_CAR)
         self.racecar.updateOldPosition(position, DEBUG_CAR)
 
-        # self._position_p = position.
+        self.time += 1.0/60
+        self.absVelocity = velocity.length()
 
+        self.distanceToTarget = abs((self.track.lines[next_waypoint] - position.p).length())
 
+        # # default = 50
+        # if (self.distanceToTarget < 50):
+        #     next_waypoint = (next_waypoint + 1) % self.sectionCount
+        #     print("Bochtje afsnijden")
+
+        #----------------------------------------------------------------------
+        # target calculation
+        #----------------------------------------------------------------------
         target = self.track.lines[next_waypoint]
-
-        # print (target)
         # calculate the target in the frame of the robot
         target = position.inverse() * target
         
@@ -197,21 +220,14 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         angle = target.as_polar()[1]
         
-
-        #----------------------------------------------------------------------
-        # calculate the throttle
-        #----------------------------------------------------------------------
-        # if velocity.length() < self.min_velocity:
-        #     throttle = 1
-        # else:
-        #     throttle = -1
-
-        
+       
         _sectionMaxVelocity   = self.computeSectionVelocityAngles(next_waypoint)
-        _sectionExitVelocity  = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
+        _sectionExitVelocity1  = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
         _sectionExitVelocity2 = self.computeSectionVelocityAngles((next_waypoint + 2) % self.sectionCount)
+        _sectionExitVelocity3 = self.computeSectionVelocityAngles((next_waypoint + 3) % self.sectionCount)
         
-        _minVelocityAhead = min(_sectionExitVelocity,_sectionExitVelocity2)
+        # _minVelocityAhead = min(_sectionExitVelocity,_sectionExitVelocity2)
+        _minVelocityAhead = min(min(_sectionExitVelocity1,_sectionExitVelocity2), _sectionExitVelocity3)
 
         tmpTargetVelocity = _sectionMaxVelocity;
         
@@ -219,17 +235,32 @@ class MatthijsRacer(Bot):
         if (_minVelocityAhead < _sectionMaxVelocity):
 
             self.tmp_position = Vector2(position.p)
-            self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
+            # self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
             
-            if (self.absDistToExit < 400):
-                tmpTargetVelocity = _minVelocityAhead
-                
+            self.absDistToExit1 = self.computeBrakeDistance((next_waypoint + 1) % self.sectionCount)
+            self.absDistToExit2 = self.computeBrakeDistance((next_waypoint + 2) % self.sectionCount)            
+            
+            # Geschat: 100 / sec = 2 per frame
+            # 2 remt iets te snel. 2.5 is haalbaar.
+            
+            # allowd_velocity = _minVelocityAhead + self.absDistToExit / 2.5      
+            # allowd_velocity = _minVelocityAhead + self.absDistToExit / 3      
+            # tmpTargetVelocity = min(allowd_velocity, _sectionMaxVelocity)
+
+
+            allowd_velocity1 = _minVelocityAhead + self.absDistToExit1 / 3      
+            allowd_velocity2 = _minVelocityAhead + self.absDistToExit2 / 3 
+            
+            tmpTargetVelocity = min(min(allowd_velocity1, _sectionMaxVelocity), allowd_velocity2)
+
+            
         else:
             self.absDistToExit = -1;
                  
-        # Vol gas bij uitkomen van de bocht    
-        if (_sectionMaxVelocity < _sectionExitVelocity):
-            tmpTargetVelocity = _sectionExitVelocity
+        # Extra ga bij uitkomen van de bocht.
+        # Niet volgas want dan slipt auto weg. Zit nog in de bocht tenslotte
+        # if (_sectionMaxVelocity < _minVelocityAhead):
+        #     tmpTargetVelocity = _sectionExitVelocity * 0.7
             
                 
         if (DEBUG_TRACK):
@@ -237,7 +268,7 @@ class MatthijsRacer(Bot):
                   f"Now : {self.curveType[next_waypoint]} ,"
                   f"Next : {self.curveType[(next_waypoint + 1) % self.sectionCount]} ,"
                   f"SectionMaxVelocity : {_sectionMaxVelocity:.0f}, "
-                  f"Exit1 = {_sectionExitVelocity:.0f}, "
+                  f"Exit1 = {_sectionExitVelocity1:.0f}, "
                   f"Exit2 = {_sectionExitVelocity2:.0f}, "
                   f"Brakedist = {self.absDistToExit:.0f}, "
                   f"TargetVelocity = {tmpTargetVelocity:.0f}" )
@@ -261,6 +292,31 @@ class MatthijsRacer(Bot):
             steering = 1
         else:
             steering = -1
+            
+            
+            
+        #----------------------------------------------------------------------
+        # Plotjuggler stuff        
+        #----------------------------------------------------------------------
+
+        udp_ip = "127.0.0.1"  # replace with the actual IP address
+        udp_port = 9870
+        
+        data = {}
+        data["time"] = self.time
+        data["next_waypoint"] = next_waypoint
+        data["real_velocity"] = self.absVelocity
+        data["target_velocity"] = tmpTargetVelocity
+        data["distanceToTarget"] = self.distanceToTarget
+        
+        json_data = json.dumps(data)
+        
+        # Create UDP socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        
+        # Send JSON data
+        sock.sendto(json_data.encode('utf-8'), (udp_ip, udp_port))
+        sock.close()
         
         return throttle, steering
 
