@@ -20,7 +20,7 @@ DRAW_CARAVAN = True
 
 DEBUG = False
 DEBUG_TRACK = True
-DEBUG_CURVES= True
+DEBUG_CURVES= False
 DEBUG_CAR = False
 
 # DEBUG = False
@@ -166,14 +166,14 @@ class MatthijsRacer(Bot):
     
     def computeSectionVelocityAngles(self, sectionIndex):
         fullSpeed = 400;
-        # fullSpeed = 100;
+        # fullSpeed = 200;
 
         # Driften maar gaat goed. Kantje boort bij scherpe bochten
         # _angleEffect = 1.3 * (abs(self.curveAngleChange[sectionIndex]) / 100.0)
 
         # From exel
         A = 0
-        B = 0.013
+        B = 0.012
         x = abs(self.curveAngleChange[sectionIndex])
 
         _angleEffect = A * x**2 + B * x
@@ -182,7 +182,7 @@ class MatthijsRacer(Bot):
             # print(f"Index : {sectionIndex}, velocity = {self.absVelocity:.1f}, angleEffect = {_angleEffect:.1f}")    
             print(f"Index : {sectionIndex}, curveAngleChange = {self.curveAngleChange[sectionIndex]:.1f}, angleEffect = {_angleEffect:.3f}")    
 
-        result = fullSpeed * max((1 -_angleEffect), 0.1)
+        result = fullSpeed * max((1 -_angleEffect), 0.25)
         
         return result
 
@@ -221,41 +221,61 @@ class MatthijsRacer(Bot):
         angle = target.as_polar()[1]
         
        
+        self.tmp_position = Vector2(position.p)
+
         _sectionMaxVelocity   = self.computeSectionVelocityAngles(next_waypoint)
-        _sectionExitVelocity1  = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
+        
+        # Brake zone 1
+        _sectionExitVelocity1 = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
         _sectionExitVelocity2 = self.computeSectionVelocityAngles((next_waypoint + 2) % self.sectionCount)
         _sectionExitVelocity3 = self.computeSectionVelocityAngles((next_waypoint + 3) % self.sectionCount)
+
+        absDistToExit1 = self.computeBrakeDistance((next_waypoint + 1) % self.sectionCount)
+        absDistToExit2 = self.computeBrakeDistance((next_waypoint + 2) % self.sectionCount)
+        absDistToExit3 = self.computeBrakeDistance((next_waypoint + 3) % self.sectionCount)
+
+        allowed_velocity1 = _sectionExitVelocity1 + absDistToExit1 / 2.5      
+        allowed_velocity2 = _sectionExitVelocity2 + absDistToExit2 / 2.5     
+        allowed_velocity3 = _sectionExitVelocity3 + absDistToExit3 / 2.5  
+
         
+        # _minVelocityAhead = _sectionExitVelocity1
+        
+        # tmpTargetVelocity = _sectionMaxVelocity;
+        
+        tmpTargetVelocity = min(min(min(allowed_velocity1, _sectionMaxVelocity), allowed_velocity2), allowed_velocity3)
+
+
         # _minVelocityAhead = min(_sectionExitVelocity,_sectionExitVelocity2)
-        _minVelocityAhead = min(min(_sectionExitVelocity1,_sectionExitVelocity2), _sectionExitVelocity3)
+        # _minVelocityAhead = min(min(_sectionExitVelocity1,_sectionExitVelocity2), _sectionExitVelocity3)
 
-        tmpTargetVelocity = _sectionMaxVelocity;
+        # tmpTargetVelocity = _sectionMaxVelocity;
         
-        # Check if braking is needed for THIS corner and the NEXT
-        if (_minVelocityAhead < _sectionMaxVelocity):
+        # # Check if braking is needed for THIS corner and the NEXT
+        # if (_minVelocityAhead < _sectionMaxVelocity):
 
-            self.tmp_position = Vector2(position.p)
-            # self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
+        #     self.tmp_position = Vector2(position.p)
+        #     # self.absDistToExit = self.computeBrakeDistance(next_waypoint+1)            
             
-            self.absDistToExit1 = self.computeBrakeDistance((next_waypoint + 1) % self.sectionCount)
-            self.absDistToExit2 = self.computeBrakeDistance((next_waypoint + 2) % self.sectionCount)            
+        #     absDistToExit1 = self.computeBrakeDistance((next_waypoint + 1) % self.sectionCount)
+        #     # self.absDistToExit2 = self.computeBrakeDistance((next_waypoint + 2) % self.sectionCount)            
             
-            # Geschat: 100 / sec = 2 per frame
-            # 2 remt iets te snel. 2.5 is haalbaar.
+        #     # Geschat: 100 / sec = 2 per frame
+        #     # 2 remt iets te snel. 2.5 is haalbaar.
             
-            # allowd_velocity = _minVelocityAhead + self.absDistToExit / 2.5      
-            # allowd_velocity = _minVelocityAhead + self.absDistToExit / 3      
-            # tmpTargetVelocity = min(allowd_velocity, _sectionMaxVelocity)
+        #     # allowd_velocity = _minVelocityAhead + self.absDistToExit / 2.5      
+        #     # allowd_velocity = _minVelocityAhead + self.absDistToExit / 3      
+        #     # tmpTargetVelocity = min(allowd_velocity, _sectionMaxVelocity)
 
 
-            allowd_velocity1 = _minVelocityAhead + self.absDistToExit1 / 3      
-            allowd_velocity2 = _minVelocityAhead + self.absDistToExit2 / 3 
+        #     allowd_velocity1 = _minVelocityAhead + absDistToExit1 / 3      
+        #     allowd_velocity2 = _minVelocityAhead + absDistToExit2 / 3      
+        #     allowd_velocity3 = _minVelocityAhead + absDistToExit3 / 3      
             
-            tmpTargetVelocity = min(min(allowd_velocity1, _sectionMaxVelocity), allowd_velocity2)
-
+        #     tmpTargetVelocity = min(allowd_velocity1, _sectionMaxVelocity)
             
-        else:
-            self.absDistToExit = -1;
+        # else:
+        #     self.absDistToExit = -1;
                  
         # Extra ga bij uitkomen van de bocht.
         # Niet volgas want dan slipt auto weg. Zit nog in de bocht tenslotte
@@ -270,7 +290,10 @@ class MatthijsRacer(Bot):
                   f"SectionMaxVelocity : {_sectionMaxVelocity:.0f}, "
                   f"Exit1 = {_sectionExitVelocity1:.0f}, "
                   f"Exit2 = {_sectionExitVelocity2:.0f}, "
-                  f"Brakedist = {self.absDistToExit:.0f}, "
+                  f"Exit3 = {_sectionExitVelocity3:.0f}, "
+                  f"Brakedist1 = {absDistToExit1:.0f}, "
+                  f"Brakedist2 = {absDistToExit2:.0f}, "
+                  f"Brakedist3 = {absDistToExit3:.0f}, "
                   f"TargetVelocity = {tmpTargetVelocity:.0f}" )
 
 
@@ -294,7 +317,6 @@ class MatthijsRacer(Bot):
             steering = -1
             
             
-            
         #----------------------------------------------------------------------
         # Plotjuggler stuff        
         #----------------------------------------------------------------------
@@ -308,6 +330,9 @@ class MatthijsRacer(Bot):
         data["real_velocity"] = self.absVelocity
         data["target_velocity"] = tmpTargetVelocity
         data["distanceToTarget"] = self.distanceToTarget
+        data["allowed_velocity1"] = allowed_velocity1
+        data["allowed_velocity2"] = allowed_velocity2
+        data["allowed_velocity3"] = allowed_velocity3
         
         json_data = json.dumps(data)
         
