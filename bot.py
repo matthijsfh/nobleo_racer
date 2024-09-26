@@ -22,6 +22,7 @@ DRAW_CARAVAN = True
 DEBUG = False
 DEBUG_TRACK = False
 DEBUG_CURVES= False
+DEBUG_CAR = False
 
 
 class MatthijsRacer(Bot):
@@ -161,7 +162,7 @@ class MatthijsRacer(Bot):
         fullSpeed = 400;
 
         # Driften maar gaat goed. Kantje boort bij scherpe bochten
-        _angleEffect = 1.2 * (abs(self.curveAngleChange[sectionIndex]) / 100.0)
+        _angleEffect = 1.3 * (abs(self.curveAngleChange[sectionIndex]) / 100.0)
 
         if (DEBUG_CURVES):
             print(f"Index : {sectionIndex}, {self.curveAngleChange[sectionIndex]:.1f}, angleEffect = {_angleEffect:.1f}")    
@@ -178,9 +179,9 @@ class MatthijsRacer(Bot):
         if (self.firstPass):
             self.firstPass = False;
        
-        self.racecar.setPosition(position, DEBUG)
-        self.racecar.calculateTrekhaak(DEBUG)
-        self.racecar.updateOldPosition(position, DEBUG)
+        self.racecar.setPosition(position, DEBUG_CAR)
+        self.racecar.calculateTrekhaak(DEBUG_CAR)
+        self.racecar.updateOldPosition(position, DEBUG_CAR)
 
         # self._position_p = position.
 
