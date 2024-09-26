@@ -22,6 +22,7 @@ DEBUG = False
 DEBUG_TRACK = True
 DEBUG_CURVES= False
 DEBUG_CAR = False
+DEBUG_PLOT = True
 
 # DEBUG = False
 # DEBUG_TRACK = False
@@ -203,10 +204,10 @@ class MatthijsRacer(Bot):
 
         self.distanceToTarget = abs((self.track.lines[next_waypoint] - position.p).length())
 
-        # # default = 50
-        # if (self.distanceToTarget < 50):
-        #     next_waypoint = (next_waypoint + 1) % self.sectionCount
-        #     print("Bochtje afsnijden")
+        # default = 50
+        if (self.distanceToTarget < 60):
+            next_waypoint = (next_waypoint + 1) % self.sectionCount
+            print("Bochtje afsnijden")
 
         #----------------------------------------------------------------------
         # target calculation
@@ -243,9 +244,9 @@ class MatthijsRacer(Bot):
                  
         # Extra ga bij uitkomen van de bocht.
         # Niet volgas want dan slipt auto weg. Zit nog in de bocht tenslotte
-        if (tmpTargetVelocity < _sectionExitVelocity1):
-            tmpTargetVelocity = _sectionExitVelocity1 * 0.7
-            
+        # if (tmpTargetVelocity < _sectionExitVelocity1):
+        #     tmpTargetVelocity = _sectionExitVelocity1 * 0.6
+
                 
         if (DEBUG_TRACK):
             print(f"{next_waypoint}, "
@@ -284,28 +285,29 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         # Plotjuggler stuff        
         #----------------------------------------------------------------------
+        if (DEBUG_PLOT):
 
-        udp_ip = "127.0.0.1"  # replace with the actual IP address
-        udp_port = 9870
-        
-        data = {}
-        data["time"] = self.time
-        data["next_waypoint"] = next_waypoint
-        data["real_velocity"] = self.absVelocity
-        data["target_velocity"] = tmpTargetVelocity
-        data["distanceToTarget"] = self.distanceToTarget
-        data["allowed_velocity1"] = allowed_velocity1
-        data["allowed_velocity2"] = allowed_velocity2
-        data["allowed_velocity3"] = allowed_velocity3
-        
-        json_data = json.dumps(data)
-        
-        # Create UDP socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        
-        # Send JSON data
-        sock.sendto(json_data.encode('utf-8'), (udp_ip, udp_port))
-        sock.close()
+            udp_ip = "127.0.0.1"  # replace with the actual IP address
+            udp_port = 9870
+            
+            data = {}
+            data["time"] = self.time
+            data["next_waypoint"] = next_waypoint
+            data["real_velocity"] = self.absVelocity
+            data["target_velocity"] = tmpTargetVelocity
+            data["distanceToTarget"] = self.distanceToTarget
+            data["allowed_velocity1"] = allowed_velocity1
+            data["allowed_velocity2"] = allowed_velocity2
+            data["allowed_velocity3"] = allowed_velocity3
+            
+            json_data = json.dumps(data)
+            
+            # Create UDP socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            
+            # Send JSON data
+            sock.sendto(json_data.encode('utf-8'), (udp_ip, udp_port))
+            sock.close()
         
         return throttle, steering
 
