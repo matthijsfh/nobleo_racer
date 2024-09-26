@@ -143,8 +143,16 @@ class MatthijsRacer(Bot):
             
         # time.sleep(10)
         
-    def computeBrakeDistance(self, sectionIndex : int):
-        distance = (self.tmp_position - self.coordinates[sectionIndex]).length()
+    def computeBrakeDistance(self, sectionIndex : int, counter : int):
+        distance = (self.tmp_position - self.coordinates[(sectionIndex + 1) % self.sectionCount]).length()
+
+        if (counter == 2):
+            distance = distance + (self.coordinates[(sectionIndex + 1) % self.sectionCount] - 
+                                   self.coordinates[(sectionIndex + 2) % self.sectionCount]).length()
+
+        if (counter == 3):
+            distance = distance + (self.coordinates[(sectionIndex + 2) % self.sectionCount] - 
+                                   self.coordinates[(sectionIndex + 3) % self.sectionCount]).length()
         
         return distance
         
@@ -174,7 +182,7 @@ class MatthijsRacer(Bot):
 
         # From exel
         A = 0
-        B = 0.012
+        B = 0.014
         x = abs(self.curveAngleChange[sectionIndex])
 
         _angleEffect = A * x**2 + B * x
@@ -183,7 +191,7 @@ class MatthijsRacer(Bot):
             # print(f"Index : {sectionIndex}, velocity = {self.absVelocity:.1f}, angleEffect = {_angleEffect:.1f}")    
             print(f"Index : {sectionIndex}, curveAngleChange = {self.curveAngleChange[sectionIndex]:.1f}, angleEffect = {_angleEffect:.3f}")    
 
-        result = fullSpeed * max((1 -_angleEffect), 0.25)
+        result = fullSpeed * max((1 -_angleEffect), 150/fullSpeed)
         
         return result
 
@@ -204,7 +212,9 @@ class MatthijsRacer(Bot):
 
         self.distanceToTarget = abs((self.track.lines[next_waypoint] - position.p).length())
 
-        # default = 50
+        #----------------------------------------------------------------------
+        # Bochtje afsnijden
+        #----------------------------------------------------------------------
         if (self.distanceToTarget < 60):
             next_waypoint = (next_waypoint + 1) % self.sectionCount
             print("Bochtje afsnijden")
@@ -231,11 +241,11 @@ class MatthijsRacer(Bot):
         _sectionExitVelocity2 = self.computeSectionVelocityAngles((next_waypoint + 2) % self.sectionCount)
         _sectionExitVelocity3 = self.computeSectionVelocityAngles((next_waypoint + 3) % self.sectionCount)
 
-        absDistToExit1 = self.computeBrakeDistance((next_waypoint + 1) % self.sectionCount)
-        absDistToExit2 = self.computeBrakeDistance((next_waypoint + 2) % self.sectionCount)
-        absDistToExit3 = self.computeBrakeDistance((next_waypoint + 3) % self.sectionCount)
+        absDistToExit1 = self.computeBrakeDistance(next_waypoint, 1)
+        absDistToExit2 = self.computeBrakeDistance(next_waypoint, 2)
+        absDistToExit3 = self.computeBrakeDistance(next_waypoint, 3)
 
-        allowed_velocity1 = _sectionExitVelocity1 + absDistToExit1 / 2.5      
+        allowed_velocity1 = _sectionExitVelocity1 + absDistToExit1 / 2.5    
         allowed_velocity2 = _sectionExitVelocity2 + absDistToExit2 / 2.5     
         allowed_velocity3 = _sectionExitVelocity3 + absDistToExit3 / 2.5  
 
