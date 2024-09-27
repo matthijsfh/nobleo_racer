@@ -25,7 +25,7 @@ DRAW_CARAVAN = True
 # DEBUG_PLOT = True
 
 DEBUG = False
-DEBUG_TRACK = False
+DEBUG_TRACK = True
 DEBUG_CURVES= False
 DEBUG_CAR = False
 DEBUG_PLOT = False
