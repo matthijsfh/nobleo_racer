@@ -60,14 +60,14 @@ class MatthijsRacer(Bot):
             # print(track_lines[i])
             # print (relativeVectors[i])
         
-            lengte1 = self.relativeVectors[i].length()
-            lengte2 = self.relativeVectors[i+1].length()
+            lengte1 = self.relativeVectors[(i-1) % self.sectionCount].length()
+            lengte2 = self.relativeVectors[(i+0) % self.sectionCount].length()
             
-            magic = 40
+            magic = 50
         
             # Calculate new point on the line close to the exit
-            newPoint1 = Vector2(self.relativeVectors[i] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
-            newPoint2 = Vector2(self.relativeVectors[i+1] * (magic / lengte2)  + self.track.lines[i])
+            newPoint1 = Vector2(self.relativeVectors[(i-1) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
+            newPoint2 = Vector2(self.relativeVectors[(i+0) % self.sectionCount] * (magic / lengte2)  + self.track.lines[i])
     
             self.curve = self.bezier_curve(newPoint1, self.track.lines[i], newPoint2, 3)
             
@@ -78,7 +78,10 @@ class MatthijsRacer(Bot):
             
             tmp = Vector2(self.curve[1][0], self.curve[1][1])
             
-            self.myNewCoordinates[i] = Vector2(tmp)
+            # Only cut sharp corners.
+
+            if (abs(self.absAngles[i]) > 15):
+                self.myNewCoordinates[i] = Vector2(tmp)
             
         return
     
@@ -113,12 +116,21 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         # All coordinates including last one + list + next one.
         self.sectionCount = len(self.track.lines)
-        self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
-        
-        # print(len(self.coordinates))
-        
+
+        # Dus 2 langer dan sectionCount
+        # self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
         # Dus 1 langer dan sectionCount
+        # self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
+
+        self.coordinates = self.track.lines + [self.track.lines[0]]
         self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
+        
+        # Calculate angles for each section
+        self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
+        
+        
+        print(len(self.coordinates))
+        print(len(self.relativeVectors))
 
         #----------------------------------------------------------------------
         # Bochtjes afsnijden
@@ -137,12 +149,7 @@ class MatthijsRacer(Bot):
             print('----------------------------------------')
 
         # Met nieuwe punten, alles herberekenen
-        # self.coordinates = [self.myNewCoordinates[i] for i in range(len(self.myNewCoordinates))]
-
-        # print(len(self.coordinates))
-
-# 
-        # time.sleep(10)
+        self.coordinates = [self.myNewCoordinates[i] for i in range(len(self.myNewCoordinates))]
         
         #----------------------------------------------------------------------
         # Startup stuff. Calculate the track and vectors
@@ -210,7 +217,8 @@ class MatthijsRacer(Bot):
         
     
     def computeSectionVelocityAngles(self, sectionIndex):
-        fullSpeed = 450;
+        fullSpeed = 450
+        # fullSpeed = 425
 
         # From exel
         A = 0.00004
@@ -267,6 +275,7 @@ class MatthijsRacer(Bot):
         
         # Lijst met coordinates is 1 verschoven tov self.track.lines
         target = self.coordinates[next_waypoint + 1]
+        target = self.coordinates[next_waypoint]
 
         # calculate the target in the frame of the robot
         target = position.inverse() * target
@@ -281,13 +290,13 @@ class MatthijsRacer(Bot):
         _sectionMaxVelocity   = self.computeSectionVelocityAngles(next_waypoint)
         
         # Brake zone 1
-        _sectionExitVelocity1 = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
-        _sectionExitVelocity2 = self.computeSectionVelocityAngles((next_waypoint + 2) % self.sectionCount)
-        _sectionExitVelocity3 = self.computeSectionVelocityAngles((next_waypoint + 3) % self.sectionCount)
+        _sectionExitVelocity1 = self.computeSectionVelocityAngles((next_waypoint + 0) % self.sectionCount)
+        _sectionExitVelocity2 = self.computeSectionVelocityAngles((next_waypoint + 1) % self.sectionCount)
+        _sectionExitVelocity3 = self.computeSectionVelocityAngles((next_waypoint + 2) % self.sectionCount)
 
-        absDistToExit1 = self.computeBrakeDistance(next_waypoint, 1)
-        absDistToExit2 = self.computeBrakeDistance(next_waypoint, 2)
-        absDistToExit3 = self.computeBrakeDistance(next_waypoint, 3)
+        absDistToExit1 = self.computeBrakeDistance(next_waypoint, 0)
+        absDistToExit2 = self.computeBrakeDistance(next_waypoint, 1)
+        absDistToExit3 = self.computeBrakeDistance(next_waypoint, 2)
 
         allowed_velocity1 = _sectionExitVelocity1 + absDistToExit1 / 2.5    
         allowed_velocity2 = _sectionExitVelocity2 + absDistToExit2 / 2.5     
@@ -356,8 +365,8 @@ class MatthijsRacer(Bot):
     def draw(self, map_scaled, zoom):
         
         
-        # for i in range(0, self.sectionCount):
-        for i in range(0, 10):
+        for i in range(0, self.sectionCount):
+        # for i in range(0, 10):
             pygame.draw.line(map_scaled, self._green,
                              self.myNewCoordinates[i] * zoom,
                              self.myNewCoordinates[i+1]  * zoom, 2) 
