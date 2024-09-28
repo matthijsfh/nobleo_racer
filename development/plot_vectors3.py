@@ -41,19 +41,21 @@ class Testing():
         #----------------------------------------------------------------------
         # Orginele baan
         #----------------------------------------------------------------------
-        # All coordinates including last one + list + next one.
+        # 47
         self.sectionCount = len(self.track.lines)
 
+        # All coordinates including last one + list + next one.
         # Dus 2 langer dan sectionCount
-        # self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
-        # Dus 1 langer dan sectionCount
-        # self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
+        self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
 
-        self.coordinates = self.track.lines + [self.track.lines[0]]
+        # Dus 1 langer dan sectionCount
         self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
-        
+
         # Calculate angles for each section
         self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
+        
+        # Lenght of each section
+        self.absLength = [math.sqrt(x**2 + y**2) for x, y in self.relativeVectors]
         
         self.myNewCoordinates = [self.coordinates[i] for i in range(len(self.coordinates))]
         
@@ -65,39 +67,62 @@ class Testing():
     
     def bochtenAfsnijden(self):
         for i in range(0, self.sectionCount):
+        # for i in range(0, 1):
     
             # print(track_lines[i])
-            # print (relativeVectors[i])
+            # print (self.relativeVectors[i])
         
-            lengte1 = self.relativeVectors[(i-1) % self.sectionCount].length()
-            lengte2 = self.relativeVectors[(i+0) % self.sectionCount].length()
+            lengte1 = self.relativeVectors[(i-0) % self.sectionCount].length()
+            lengte2 = self.relativeVectors[(i+1) % self.sectionCount].length()
+
+            # print (lengte1)
+            # print (lengte2)
             
-            magic = 100
+            magic = 50
         
             # Calculate new point on the line close to the exit
-            newPoint1 = Vector2(self.relativeVectors[(i-1) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
-            newPoint2 = Vector2(self.relativeVectors[(i+0) % self.sectionCount] * (magic / lengte2)  + self.track.lines[i])
+            newPoint1 = Vector2(self.relativeVectors[(i-0) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
+            newPoint2 = Vector2(self.relativeVectors[(i+1) % self.sectionCount] * (magic / lengte2)  + self.track.lines[i])
     
             self.curve = self.bezier_curve(newPoint1, self.track.lines[i], newPoint2, 3)
             
-            # print(newPoint1)
-            # print(self.track.lines[i])
-            # print(newPoint2)
-            # print(self.curve)
-            
             tmp = Vector2(self.curve[1][0], self.curve[1][1])
-            
-            # Only cut sharp corners.
 
             relativeAngle1 = self.absAngles[(i-0) % self.sectionCount] - self.absAngles[(i-1) % self.sectionCount]
             relativeAngle2 = self.absAngles[(i+1) % self.sectionCount] - self.absAngles[(i-0) % self.sectionCount]
             relativeAngle3 = self.absAngles[(i+2) % self.sectionCount] - self.absAngles[(i+1) % self.sectionCount]
 
-            print(f"i = {i}, hoek = {relativeAngle1}, {relativeAngle2}")
+            if (relativeAngle1 < -180):
+                relativeAngle1 += 360
 
-            if (abs(relativeAngle1) >= 5) and (abs(relativeAngle2) >= 5) and (abs(relativeAngle2) >= 5):
-                # if (abs(relativeAngle1) <= 40) and (abs(relativeAngle2) <= 40) and (abs(relativeAngle3) <= 40):
+            if (relativeAngle2 < -180):
+                relativeAngle2 += 360
+
+            if (relativeAngle3 < -180):
+                relativeAngle3 += 360
+
+            if (relativeAngle1 > +180):
+                relativeAngle1 -= 360
+
+            if (relativeAngle2 > +180):
+                relativeAngle2 -= 360
+
+            if (relativeAngle3 > +180):
+                relativeAngle3 -= 360
+
+
+            # if (abs(relativeAngle1) >= 5) and (abs(relativeAngle2) >= 5) and (abs(relativeAngle3) >= 5):
+            # if (abs(relativeAngle1) <= 10) and (abs(relativeAngle2) <= 10) and (abs(relativeAngle3) <= 10):
+
+            print(f"{relativeAngle1:6.1f}, {relativeAngle2:6.1f}, {relativeAngle3:6.1f}")                
+
+            if (abs(relativeAngle1) >= 20):
                 self.myNewCoordinates[i] = Vector2(tmp)
+            else:
+                self.myNewCoordinates[i] = Vector2(self.track.lines[i])
+                
+
+            # self.myNewCoordinates[i] = Vector2(tmp)
             
         return
     
@@ -125,28 +150,6 @@ class Testing():
         
         return
 
-    
-    # def plotRelativeVectors(self, fig, axis, relativeVectors, marker=''):
-    #     x_vals = [v[0] for v in relativeVectors]
-    #     y_vals = [-1*v[1] for v in relativeVectors]
-        
-    #     axis.plot(x_vals, y_vals, marker=marker)
-    #     axis.grid(True)
-    
-    #     return
-    
-    
-    # def plotPoint(self, fig, axis, point: Vector2,  marker="*", color="Orange"):
-    #     axis.scatter(point.x, -1.0*point.y, marker='*', color=color)
-    
-    #     return
-    
-    # def plotLine(self, fig, axis, point1: Vector2, point2: Vector2, color="Orange"):
-    #     axis.plot([point1.x, point2.x] , [-1.0*point1.y, -1*point2.y], -1.0*point2.y, color=color)
-    
-    #     return
-
-
     def bezier_curve(self, p0, p1, p2, num_points=10):
         """Generates a quadratic Bezier curve given 3 control points."""
         t = np.linspace(0, 1, num_points).reshape(-1, 1)  # Reshape to column vector
@@ -159,7 +162,7 @@ def main():
     
     fig, axes = plt.subplots(1, 1)
     
-    test.plotCoordinates(fig, axes)        
+    test.plotCoordinates(fig, axes, color='grey')        
     test.bochtenAfsnijden()
     test.plotCoordinates2(fig, axes, color='blue')        
     
