@@ -12,6 +12,7 @@ import copy
 
 import json
 import socket
+import numpy as np
 
 from .caravan.caravan import caravan
 from .racecar.racecar import racecar
@@ -25,11 +26,10 @@ DRAW_CARAVAN = True
 # DEBUG_PLOT = True
 
 DEBUG = False
-DEBUG_TRACK = True
+DEBUG_TRACK = False
 DEBUG_CURVES= False
 DEBUG_CAR = False
 DEBUG_PLOT = False
-
 
 class MatthijsRacer(Bot):
     @property
@@ -48,6 +48,41 @@ class MatthijsRacer(Bot):
     def color(self, value):
         self._color = value
     
+    def bezier_curve(self, p0, p1, p2, num_points=10):
+        """Generates a quadratic Bezier curve given 3 control points."""
+        t = np.linspace(0, 1, num_points).reshape(-1, 1)  # Reshape to column vector
+        curve = (1-t)**2 * p0 + 2*(1-t) * t * p1 + t**2 * p2
+        return curve
+    
+    def bochtenAfsnijden(self):
+        for i in range(0, self.sectionCount):
+    
+            # print(track_lines[i])
+            # print (relativeVectors[i])
+        
+            lengte1 = self.relativeVectors[i].length()
+            lengte2 = self.relativeVectors[i+1].length()
+            
+            magic = 40
+        
+            # Calculate new point on the line close to the exit
+            newPoint1 = Vector2(self.relativeVectors[i] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
+            newPoint2 = Vector2(self.relativeVectors[i+1] * (magic / lengte2)  + self.track.lines[i])
+    
+            self.curve = self.bezier_curve(newPoint1, self.track.lines[i], newPoint2, 3)
+            
+            # print(newPoint1)
+            # print(self.track.lines[i])
+            # print(newPoint2)
+            # print(self.curve)
+            
+            tmp = Vector2(self.curve[1][0], self.curve[1][1])
+            
+            self.myNewCoordinates[i] = Vector2(tmp)
+            
+        return
+    
+    
     def __init__(self, track):
         super().__init__(track)
         self.color = (0xff, 0x80, 0)
@@ -56,6 +91,7 @@ class MatthijsRacer(Bot):
         self._black = pygame.Color(0, 0, 0, 50)
         self._green = pygame.Color(0, 255, 0, 50)
         self._red = pygame.Color(255, 0, 0, 50)
+        self._blue = pygame.Color(0, 0, 255, 50)
         
         self.max_velocity = 500.0
         self.min_velocity = 140.0
@@ -73,28 +109,44 @@ class MatthijsRacer(Bot):
         self.time = 0
         
         #----------------------------------------------------------------------
+        # Orginele baan
+        #----------------------------------------------------------------------
+        # All coordinates including last one + list + next one.
+        self.sectionCount = len(self.track.lines)
+        self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
+        
+        # print(len(self.coordinates))
+        
+        # Dus 1 langer dan sectionCount
+        self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
+
+        #----------------------------------------------------------------------
         # Bochtjes afsnijden
         #----------------------------------------------------------------------
-        self.myLines = self.track.lines
-
-
-        # Cut some corners
-        # Plot new track
-
+        self.myNewCoordinates = [self.coordinates[i] for i in range(len(self.coordinates))]
+        
+        self.bochtenAfsnijden()
+        
         if (DEBUG_TRACK): 
-            print(self.track.lines)
-            print(self.myLines)
+            print('----------------------------------------')
+            print(len(self.coordinates))
+            print(self.coordinates)
+            print('----------------------------------------')
+            print(len(self.myNewCoordinates))
+            print(self.myNewCoordinates)
+            print('----------------------------------------')
 
-    
+        # Met nieuwe punten, alles herberekenen
+        # self.coordinates = [self.myNewCoordinates[i] for i in range(len(self.myNewCoordinates))]
+
+        # print(len(self.coordinates))
+
+# 
+        # time.sleep(10)
+        
         #----------------------------------------------------------------------
         # Startup stuff. Calculate the track and vectors
         #----------------------------------------------------------------------
-        # 47
-        self.sectionCount = len(self.myLines)
-
-        # All coordinates including last one + list + next one.
-        # Dus 2 langer dan sectionCount
-        self.coordinates = [self.myLines[-1]] + self.myLines + [self.myLines[0]]
         
         if (DEBUG_TRACK): 
             print(len(self.coordinates))
@@ -192,17 +244,20 @@ class MatthijsRacer(Bot):
         # Orgninele code
         # self.distanceToTarget = abs((self.myLines[next_waypoint] - position.p).length())
 
-        # Lijst met coordinates is 1 verschoven tov self.track.lines
-        self.distanceToTarget = abs((self.coordinates[next_waypoint+1] - position.p).length())
+        # # Lijst met coordinates is 1 verschoven tov self.track.lines
+        # self.distanceToTarget = abs((self.coordinates[next_waypoint+1] - position.p).length())
+        # # self.distanceToTarget = abs((self.coordinates[next_waypoint] - position.p).length())
+                
+        # print(self.distanceToTarget)
 
         #----------------------------------------------------------------------
         # Bochtje afsnijden
         #----------------------------------------------------------------------
-        if (self.distanceToTarget < 50):
-            next_waypoint = (next_waypoint + 1) % self.sectionCount
+        # if (self.distanceToTarget < 50):
+        #     next_waypoint = (next_waypoint + 1) % self.sectionCount
             
-            if (DEBUG_CURVES):
-                print("Bochtje afsnijden")
+        #     if (DEBUG_CURVES):
+        #         print("Bochtje afsnijden")
 
         #----------------------------------------------------------------------
         # target calculation
@@ -211,7 +266,7 @@ class MatthijsRacer(Bot):
         # target = self.myLines[next_waypoint]
         
         # Lijst met coordinates is 1 verschoven tov self.track.lines
-        target = self.coordinates[next_waypoint+1]
+        target = self.coordinates[next_waypoint + 1]
 
         # calculate the target in the frame of the robot
         target = position.inverse() * target
@@ -300,8 +355,17 @@ class MatthijsRacer(Bot):
     #----------------------------------------------------------------------
     def draw(self, map_scaled, zoom):
         
-        if (self.firstDraw):
-            self.firstDraw = False;
+        
+        # for i in range(0, self.sectionCount):
+        for i in range(0, 10):
+            pygame.draw.line(map_scaled, self._green,
+                             self.myNewCoordinates[i] * zoom,
+                             self.myNewCoordinates[i+1]  * zoom, 2) 
+            
+            pygame.draw.line(map_scaled, self._blue,
+                             self.coordinates[i] * zoom,
+                             self.coordinates[i+1]  * zoom, 2) 
+        
         
         if DRAW_CARAVAN:
         
@@ -334,3 +398,8 @@ class MatthijsRacer(Bot):
             map_scaled.blit(caravan_image, caravan_rect)
         
         return
+
+
+
+    
+    

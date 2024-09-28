@@ -120,7 +120,7 @@ def main():
         lengte1 = relativeVectors[i].length()
         lengte2 = relativeVectors[i+1].length()
         
-        magic = 60
+        magic = 10
     
         # Calculate new point on the line close to the exit
         newPoint1 = relativeVectors[i] * (1 -magic / lengte1) + track_lines[(i-1) % (sectionCount)]
