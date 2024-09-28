@@ -227,8 +227,8 @@ class MatthijsRacer(Bot):
         A = 0.00004
         B = 0.013
 
-        A = 0.00004
-        B = 0.013
+        A = 0.00006
+        B = 0.014
 
         x = abs(self.curveAngleChange[sectionIndex])
 
@@ -266,7 +266,7 @@ class MatthijsRacer(Bot):
         # Doet bij track 1 wel iets.
         # Doet bij track 2 veel met al die korte bochten.
         #----------------------------------------------------------------------
-        if (self.distanceToTarget < 70):
+        if (self.distanceToTarget < 60):
             next_waypoint = (next_waypoint + 1) % self.sectionCount
             
             if (DEBUG_CURVES):
