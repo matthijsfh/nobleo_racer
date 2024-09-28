@@ -64,24 +64,37 @@ class MatthijsRacer(Bot):
             self._caravan = pygame.image.load(
                 os.path.dirname(__file__) + '/caravan/caravan.png')
             
-        self.firstPass = True    
-        self.caravan = caravan("Kip", "De Lux", 1999)
+        self.firstPass = True
+        self.firstDraw = True
+        
+        self.caravan = caravan("Kip", "De Luxe", 1999)
         self.racecar = racecar()
         
         self.time = 0
         
+        #----------------------------------------------------------------------
+        # Bochtjes afsnijden
+        #----------------------------------------------------------------------
+        self.myLines = self.track.lines
+
+
+        # Cut some corners
+        # Plot new track
+
         if (DEBUG_TRACK): 
             print(self.track.lines)
-        
+            print(self.myLines)
+
+    
         #----------------------------------------------------------------------
         # Startup stuff. Calculate the track and vectors
         #----------------------------------------------------------------------
         # 47
-        self.sectionCount = len(self.track.lines)
+        self.sectionCount = len(self.myLines)
 
         # All coordinates including last one + list + next one.
         # Dus 2 langer dan sectionCount
-        self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
+        self.coordinates = [self.myLines[-1]] + self.myLines + [self.myLines[0]]
         
         if (DEBUG_TRACK): 
             print(len(self.coordinates))
@@ -176,7 +189,11 @@ class MatthijsRacer(Bot):
         self.time += 1.0/60
         self.absVelocity = velocity.length()
 
-        self.distanceToTarget = abs((self.track.lines[next_waypoint] - position.p).length())
+        # Orgninele code
+        # self.distanceToTarget = abs((self.myLines[next_waypoint] - position.p).length())
+
+        # Lijst met coordinates is 1 verschoven tov self.track.lines
+        self.distanceToTarget = abs((self.coordinates[next_waypoint+1] - position.p).length())
 
         #----------------------------------------------------------------------
         # Bochtje afsnijden
@@ -190,7 +207,12 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         # target calculation
         #----------------------------------------------------------------------
-        target = self.track.lines[next_waypoint]
+        # Orgninele code
+        # target = self.myLines[next_waypoint]
+        
+        # Lijst met coordinates is 1 verschoven tov self.track.lines
+        target = self.coordinates[next_waypoint+1]
+
         # calculate the target in the frame of the robot
         target = position.inverse() * target
         
@@ -277,6 +299,9 @@ class MatthijsRacer(Bot):
     # Draw 
     #----------------------------------------------------------------------
     def draw(self, map_scaled, zoom):
+        
+        if (self.firstDraw):
+            self.firstDraw = False;
         
         if DRAW_CARAVAN:
         

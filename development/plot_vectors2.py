@@ -26,24 +26,40 @@ track_lines = [
     Vector2(1373.9, 220.944), Vector2(1419.79, 205.647), Vector2(1562.25, 117.686), Vector2(1642.56, 97.6086), 
     Vector2(1746.77, 111.95), Vector2(1818.48, 174.096), Vector2(1829.95, 240.066), Vector2(1792.67, 275.441), 
     Vector2(1681.76, 283.09), Vector2(760.09, 281.177), Vector2(678.823, 309.86), Vector2(640.579, 351.928), 
-    Vector2(650.14, 395.908), Vector2(716.11, 429.371), Vector2(828.928, 444.669), Vector2(1389.2, 440.844)
+    Vector2(650.14, 395.908), Vector2(716.11, 429.371), Vector2(828.928, 444.669)
 ]
 
-def plotVectors():
-    # Extract X and Y coordinates
-    x_vals = [v[0] for v in track_lines]
-    y_vals = [-1*v[1] for v in track_lines]
+def plotCoordinates(fig, axis, tmp, color='grey'):
+    x_vals = [v[0] for v in tmp]
+    y_vals = [-1*v[1] for v in tmp]
     
-    # Plot the vectors
-    plt.figure(figsize=(10, 6))
-    plt.plot(x_vals, y_vals, marker='o')
-    plt.title('XY Graph of Vectors')
-    plt.xlabel('X Coordinates')
-    plt.ylabel('Y Coordinates')
-    plt.grid(True)
-    plt.show()
+    axis.plot(x_vals, y_vals, marker='o', color=color)
+    axis.grid(True)
     
     return
+
+
+
+def plotRelativeVectors(fig, axis, relativeVectors, marker=''):
+    x_vals = [v[0] for v in relativeVectors]
+    y_vals = [-1*v[1] for v in relativeVectors]
+    
+    axis.plot(x_vals, y_vals, marker=marker)
+    axis.grid(True)
+
+    return
+
+
+def plotPoint(fig, axis, point: Vector2,  marker="*", color="Orange"):
+    axis.scatter(point.x, -1.0*point.y, marker='*', color=color)
+
+    return
+
+def plotLine(fig, axis, point1: Vector2, point2: Vector2, color="Orange"):
+    axis.plot([point1.x, point2.x] , [-1.0*point1.y, -1*point2.y], -1.0*point2.y, color=color)
+
+    return
+
 
 # def bezier_curve(p0, p1, p2, p3, num_points=100):
 #     """Generates a cubic Bezier curve given 4 control points."""
@@ -52,7 +68,7 @@ def plotVectors():
 #     return curve
 
 
-def bezier_curve(p0, p1, p2, num_points=100):
+def bezier_curve(p0, p1, p2, num_points=10):
     """Generates a quadratic Bezier curve given 3 control points."""
     t = np.linspace(0, 1, num_points).reshape(-1, 1)  # Reshape to column vector
     curve = (1-t)**2 * p0 + 2*(1-t) * t * p1 + t**2 * p2
@@ -77,23 +93,54 @@ def smooth_track(track_lines, num_points_per_segment = 10):
 
 def main():
     coordinates = [track_lines[-1]] + track_lines + [track_lines[0]]
+
+    newCoordinates = [track_lines[-1]] + track_lines + [track_lines[0]]
+
     relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(coordinates)]
     absAngles = [math.degrees(math.atan2(y, x)) for x, y in relativeVectors]    
     absLength = [math.sqrt(x**2 + y**2) for x, y in relativeVectors]
 
     # Smooth the track using Bezier curves
-    smoothed_points = smooth_track(track_lines)
+    # smoothed_points = smooth_track(track_lines)
 
-    # Plot the original points and the smoothed curve
-    plt.figure(figsize=(10, 6))
-    plt.plot([v.x for v in track_lines], [v.y for v in track_lines], 'o--', label="Original Track")
-    plt.plot(smoothed_points[:, 0], smoothed_points[:, 1], '*', label="Smoothed Track", color="red")
-    plt.title("Bezier Curve Smoothing")
-    plt.xlabel("X Coordinates")
-    plt.ylabel("Y Coordinates")
-    plt.legend()
-    plt.grid(True)
+    fig, axes = plt.subplots(1, 1)
+    plotCoordinates(fig, axes, coordinates, color='grey')
+    # plotRelativeVectors(fig, axes, relativeVectors)
+
+    sectionCount = len(track_lines)
+    print(f"Number of track lines  : {len(track_lines)}")
+
+    # for i in range(0, sectionCount):
+
+    for i in range(0, sectionCount):
+
+        # print(track_lines[i])
+        # print (relativeVectors[i])
+    
+        lengte1 = relativeVectors[i].length()
+        lengte2 = relativeVectors[i+1].length()
+        
+        magic = 60
+    
+        # Calculate new point on the line close to the exit
+        newPoint1 = relativeVectors[i] * (1 -magic / lengte1) + track_lines[(i-1) % (sectionCount)]
+        newPoint2 = relativeVectors[i+1] * (magic / lengte2) + track_lines[i]
+
+        curve = bezier_curve(newPoint1, track_lines[i], newPoint2, 3)
+        
+        # print(newPoint1)
+        # print(track_lines[i])
+        # print(newPoint2)
+        # print(curve)
+        
+        plotRelativeVectors(fig, axes, curve, marker='*')
+        
+        newCoordinates[i] = curve[1]
+
+    plotCoordinates(fig, axes, newCoordinates, color='red')
+
     plt.show()
+        
 
 if __name__ == '__main__':
     main()
