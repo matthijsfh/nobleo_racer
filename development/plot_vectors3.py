@@ -89,7 +89,14 @@ class Testing():
             
             # Only cut sharp corners.
 
-            if (abs(self.absAngles[i]) <= 30):
+            relativeAngle1 = self.absAngles[(i-0) % self.sectionCount] - self.absAngles[(i-1) % self.sectionCount]
+            relativeAngle2 = self.absAngles[(i+1) % self.sectionCount] - self.absAngles[(i-0) % self.sectionCount]
+            relativeAngle3 = self.absAngles[(i+2) % self.sectionCount] - self.absAngles[(i+1) % self.sectionCount]
+
+            print(f"i = {i}, hoek = {relativeAngle1}, {relativeAngle2}")
+
+            if (abs(relativeAngle1) >= 5) and (abs(relativeAngle2) >= 5) and (abs(relativeAngle2) >= 5):
+                # if (abs(relativeAngle1) <= 40) and (abs(relativeAngle2) <= 40) and (abs(relativeAngle3) <= 40):
                 self.myNewCoordinates[i] = Vector2(tmp)
             
         return
