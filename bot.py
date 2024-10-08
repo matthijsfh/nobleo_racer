@@ -19,18 +19,19 @@ from .racecar.racecar import racecar
 
 DRAW_CARAVAN = True
 
-# DEBUG = False
-# DEBUG_TRACK = True
-# DEBUG_CURVES= False
-# DEBUG_CAR = False
-# DEBUG_PLOT = True
-
 DEBUG = False
 DEBUG_TRACK = False
 DEBUG_CURVES= False
 DEBUG_CAR = False
 DEBUG_PLOT = False
 BOCHT_AFSNIJDEN = False
+
+# DEBUG = False
+# DEBUG_TRACK = False
+# DEBUG_CURVES= False
+# DEBUG_CAR = False
+# DEBUG_PLOT = True
+# BOCHT_AFSNIJDEN = False
 
 class MatthijsRacer(Bot):
     @property
@@ -68,7 +69,8 @@ class MatthijsRacer(Bot):
             print (lengte1)
             print (lengte2)
             
-            magic = 50
+            # magic = 50
+            magic = 60
         
             # Calculate new point on the line close to the exit
             newPoint1 = Vector2(self.relativeVectors[(i-0) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
@@ -107,6 +109,11 @@ class MatthijsRacer(Bot):
         self.racecar = racecar()
         
         self.time = 0
+        self.angle = 0
+        
+        # self.postionCarOld = Transform(None, [0,0])
+        self.postionCarOld = Vector2([0,0])
+        self.postionCar = Vector2([0,0])
         
         #----------------------------------------------------------------------
         # Orginele baan (track 1 = 47)
@@ -130,6 +137,17 @@ class MatthijsRacer(Bot):
             for index, (vector, angle) in enumerate(zip(self.relativeVectors, self.absAngles)):
                 print(f"Index: {index}, Vector: {vector}, Angle: {angle:.2f} deg")        
         
+        
+        #----------------------------------------------------------------------
+        # Nasty hack
+        #----------------------------------------------------------------------
+        self.trackNo = 0
+        
+        # if (self.sectionCount == 47):
+        #     self.trackNo = 1
+            
+        # if (self.sectionCount == 50):
+        #     self.trackNo = 2
 
         #----------------------------------------------------------------------
         # Bochtjes afsnijden met nieuwe curve.
@@ -221,15 +239,34 @@ class MatthijsRacer(Bot):
         
     
     def computeSectionVelocityAngles(self, sectionIndex):
-        fullSpeed = 450;
+        # fullSpeed = 450;
+        # fullSpeed = 500;
+        # fullSpeed = 510;
 
         # From exel
-        A = 0.00004
+        # A = 0.00004
+        # B = 0.013
+
+        # Dit vliegt uit de bocht
+        # A = 0.00006
+        # B = 0.012
+
+        # Even snel + 60-70-80
+        # fullSpeed = 500;
+        # A = 1.2/10000
+        # B = 0.0125
+
+        # Goed voor track1
+        fullSpeed = 520;
+        A = 1.2/10000
         B = 0.013
 
-        A = 0.00006
-        B = 0.014
+        # # Track 2
+        # fullSpeed = 520;
+        # A = 1.2/10000
+        # B = 0.013
 
+        
         x = abs(self.curveAngleChange[sectionIndex])
 
         _angleEffect = A * x**2 + B * x
@@ -247,9 +284,6 @@ class MatthijsRacer(Bot):
         # Set the racecar pose
         # Set the caravan pose
         #----------------------------------------------------------------------
-        if (self.firstPass):
-            self.firstPass = False;
-       
         self.racecar.setPosition(position, DEBUG_CAR)
         self.racecar.calculateTrekhaak(DEBUG_CAR)
         self.racecar.updateOldPosition(position, DEBUG_CAR)
@@ -265,17 +299,65 @@ class MatthijsRacer(Bot):
         # Trekt de auto recht door gauw naar het volgende punt te kijken.
         # Doet bij track 1 wel iets.
         # Doet bij track 2 veel met al die korte bochten.
+        # 60 werkt overal.
         #----------------------------------------------------------------------
+        # Track 1
+        # if (self.distanceToTarget < 60): 
         if (self.distanceToTarget < 60):
             next_waypoint = (next_waypoint + 1) % self.sectionCount
-            
-            if (DEBUG_CURVES):
-                print("Bochtje afsnijden")
+
+        elif (self.distanceToTarget < 70):
+            if (abs(self.slipAngleDeg) < 20):
+                next_waypoint = (next_waypoint + 1) % self.sectionCount
                 
+        #----------------------------------------------------------------------
+        # TRACK 1: Skip some points
+        #----------------------------------------------------------------------
+        # if (self.trackNo == 1):
+    
+        #     if (next_waypoint == 36):
+        #         next_waypoint = 37
+    
+        #     if (next_waypoint == 33):
+        #         next_waypoint = 34
+    
+        #     if (next_waypoint == 28):
+        #         next_waypoint = 29
+    
+        #     if (next_waypoint == 25):
+        #         next_waypoint = 26
+    
+        #     if (next_waypoint == 18):
+        #         next_waypoint = 19
+    
+        #     if (next_waypoint == 8):
+        #         next_waypoint = 9
+
+        #----------------------------------------------------------------------
+        # TRACK 2: Skip some points
+        #----------------------------------------------------------------------
+        # if (self.trackNo == 2):
+        #     if (next_waypoint == 44):
+        #         next_waypoint = 45
+    
+        #     if (next_waypoint == 40):
+        #         next_waypoint = 41
+    
+        #     if (next_waypoint == 21):
+        #         next_waypoint = 22
+    
+        #     if (next_waypoint == 12):
+        #         next_waypoint = 13
+
+        if (next_waypoint == 36):
+            next_waypoint = 37
+
+
         #----------------------------------------------------------------------
         # target calculation
         #----------------------------------------------------------------------
         target = self.track.lines[next_waypoint]
+        
         # calculate the target in the frame of the robot
         target = position.inverse() * target
         
@@ -283,7 +365,37 @@ class MatthijsRacer(Bot):
         # calculate the angle to the target
         #----------------------------------------------------------------------
         angle = target.as_polar()[1]
+        
+        #----------------------------------------------------------------------
+        # Differentiate
+        #----------------------------------------------------------------------
+        self.absCarAngle = position.M.angle
+        self.absCarMoveAngle = 0
+
+        self.postionCarOld = self.postionCar
+        self.postionCar = Vector2(position.p)
+        
+        tmp = Vector2(self.postionCar - self.postionCarOld)
        
+        self.absCarMoveAngle = math.atan2(tmp[1], tmp[0])
+        self.slipAngle = self.absCarAngle - self.absCarMoveAngle
+        
+        if (self.firstPass):
+            self.firstPass = False;
+            self.slipAngle = 0;
+
+        
+        self.slipAngleDeg = self.slipAngle/math.pi * 180
+        
+        if (self.slipAngleDeg >= 180):
+            self.slipAngleDeg -= 360
+            
+        if (self.slipAngleDeg <= -180):
+            self.slipAngleDeg += 360
+        
+        #----------------------------------------------------------------------
+        # Braking and some magic
+        #----------------------------------------------------------------------
         self.tmp_position = Vector2(position.p)
       
         _sectionMaxVelocity   = self.computeSectionVelocityAngles(next_waypoint)
@@ -300,7 +412,7 @@ class MatthijsRacer(Bot):
         allowed_velocity1 = _sectionExitVelocity1 + absDistToExit1 / 2.5    
         allowed_velocity2 = _sectionExitVelocity2 + absDistToExit2 / 2.5     
         allowed_velocity3 = _sectionExitVelocity3 + absDistToExit3 / 2.5  
-      
+
         # Die _sectionMaxVelocity voorkomt dat de auto uit de bocht vliegt bij de het laatste segment.
         # Geen idee waarom
         tmpTargetVelocity = min(min(min(allowed_velocity1, _sectionMaxVelocity), allowed_velocity2), allowed_velocity3)
@@ -326,14 +438,25 @@ class MatthijsRacer(Bot):
             throttle = 1
         else:
             throttle = -1
-
+            
         #----------------------------------------------------------------------
         # calculate the steering
         #----------------------------------------------------------------------
-        if angle > 0:
+        # if angle > 0:
+        #     steering = 1
+        # else:
+        #     steering = -1
+
+        if angle > 5:
             steering = 1
-        else:
+        elif angle < -5:
             steering = -1
+        else:
+            steering = 0
+
+        # if (abs(self.slipAngleDeg) > 20):
+        #     throttle = 0
+
 
         #----------------------------------------------------------------------
         # Debug logging
@@ -372,6 +495,10 @@ class MatthijsRacer(Bot):
             data["allowed_velocity3"] = allowed_velocity3
             data["throttle"] = throttle
             data["steering"] = steering
+            data["absCarAngle"] = self.absCarAngle / math.pi * 180
+            data["absCarMoveAngle"] = self.absCarMoveAngle / math.pi * 180
+            data["slipAngle"] = self.slipAngleDeg
+            
             
             json_data = json.dumps(data)
             
