@@ -337,8 +337,8 @@ class MatthijsRacer(Bot):
         # TRACK 2: Skip some points
         #----------------------------------------------------------------------
         # if (self.trackNo == 2):
-        #     if (next_waypoint == 44):
-        #         next_waypoint = 45
+        # if (next_waypoint == 44):
+        #     next_waypoint = 45
     
         #     if (next_waypoint == 40):
         #         next_waypoint = 41
@@ -349,6 +349,7 @@ class MatthijsRacer(Bot):
         #     if (next_waypoint == 12):
         #         next_waypoint = 13
 
+        # Nodig voor track 2.
         if (next_waypoint == 36):
             next_waypoint = 37
 
@@ -412,6 +413,7 @@ class MatthijsRacer(Bot):
         allowed_velocity1 = _sectionExitVelocity1 + absDistToExit1 / 2.5    
         allowed_velocity2 = _sectionExitVelocity2 + absDistToExit2 / 2.5     
         allowed_velocity3 = _sectionExitVelocity3 + absDistToExit3 / 2.5  
+
 
         # Die _sectionMaxVelocity voorkomt dat de auto uit de bocht vliegt bij de het laatste segment.
         # Geen idee waarom
