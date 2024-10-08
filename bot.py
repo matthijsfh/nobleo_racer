@@ -19,18 +19,19 @@ from .racecar.racecar import racecar
 
 DRAW_CARAVAN = True
 
-# DEBUG = False
-# DEBUG_TRACK = True
-# DEBUG_CURVES= False
-# DEBUG_CAR = False
-# DEBUG_PLOT = True
-
 DEBUG = False
 DEBUG_TRACK = False
 DEBUG_CURVES= False
 DEBUG_CAR = False
-DEBUG_PLOT = True
-BOCHT_AFSNIJDEN = True
+DEBUG_PLOT = False
+BOCHT_AFSNIJDEN = False
+
+# DEBUG = False
+# DEBUG_TRACK = False
+# DEBUG_CURVES= False
+# DEBUG_CAR = False
+# DEBUG_PLOT = True
+# BOCHT_AFSNIJDEN = False
 
 class MatthijsRacer(Bot):
     @property
@@ -68,7 +69,8 @@ class MatthijsRacer(Bot):
             print (lengte1)
             print (lengte2)
             
-            magic = 50
+            # magic = 50
+            magic = 60
         
             # Calculate new point on the line close to the exit
             newPoint1 = Vector2(self.relativeVectors[(i-0) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
@@ -107,7 +109,6 @@ class MatthijsRacer(Bot):
         self.racecar = racecar()
         
         self.time = 0
-        
         self.angle = 0
         
         # self.postionCarOld = Transform(None, [0,0])
@@ -137,11 +138,16 @@ class MatthijsRacer(Bot):
                 print(f"Index: {index}, Vector: {vector}, Angle: {angle:.2f} deg")        
         
         
-        if (self.sectionCount == 47):
-            self.trackNo = 1
+        #----------------------------------------------------------------------
+        # Nasty hack
+        #----------------------------------------------------------------------
+        self.trackNo = 0
+        
+        # if (self.sectionCount == 47):
+        #     self.trackNo = 1
             
-        if (self.sectionCount == 50):
-            self.trackNo = 2
+        # if (self.sectionCount == 50):
+        #     self.trackNo = 2
 
         #----------------------------------------------------------------------
         # Bochtjes afsnijden met nieuwe curve.
@@ -259,6 +265,7 @@ class MatthijsRacer(Bot):
         # fullSpeed = 520;
         # A = 1.2/10000
         # B = 0.013
+
         
         x = abs(self.curveAngleChange[sectionIndex])
 
@@ -277,7 +284,6 @@ class MatthijsRacer(Bot):
         # Set the racecar pose
         # Set the caravan pose
         #----------------------------------------------------------------------
-       
         self.racecar.setPosition(position, DEBUG_CAR)
         self.racecar.calculateTrekhaak(DEBUG_CAR)
         self.racecar.updateOldPosition(position, DEBUG_CAR)
@@ -297,64 +303,55 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         # Track 1
         # if (self.distanceToTarget < 60): 
-        if (self.distanceToTarget < 50):
+        if (self.distanceToTarget < 60):
             next_waypoint = (next_waypoint + 1) % self.sectionCount
-        
-            print("Bochtje afsnijden < 60")
 
         elif (self.distanceToTarget < 70):
-            # if (abs(self.slipAngleDeg) < 4):
-            if (abs(self.slipAngleDeg) < 10):
+            if (abs(self.slipAngleDeg) < 20):
                 next_waypoint = (next_waypoint + 1) % self.sectionCount
-                print("Bochtje afsnijden < 70")
-            
-        # elif (self.distanceToTarget < 80):
-        #     # if (abs(self.slipAngleDeg) < 2):
-        #     if (abs(self.slipAngleDeg) < 5):
-        #         next_waypoint = (next_waypoint + 1) % self.sectionCount
-        #         print("Bochtje afsnijden < 80")
                 
         #----------------------------------------------------------------------
         # TRACK 1: Skip some points
         #----------------------------------------------------------------------
-        if (self.trackNo == 1):
+        # if (self.trackNo == 1):
     
-            if (next_waypoint == 36):
-                next_waypoint = 37
+        #     if (next_waypoint == 36):
+        #         next_waypoint = 37
     
-            if (next_waypoint == 33):
-                next_waypoint = 34
+        #     if (next_waypoint == 33):
+        #         next_waypoint = 34
     
-            if (next_waypoint == 28):
-                next_waypoint = 29
+        #     if (next_waypoint == 28):
+        #         next_waypoint = 29
     
-            if (next_waypoint == 25):
-                next_waypoint = 26
+        #     if (next_waypoint == 25):
+        #         next_waypoint = 26
     
-            if (next_waypoint == 18):
-                next_waypoint = 19
+        #     if (next_waypoint == 18):
+        #         next_waypoint = 19
     
-            if (next_waypoint == 8):
-                next_waypoint = 9
+        #     if (next_waypoint == 8):
+        #         next_waypoint = 9
 
         #----------------------------------------------------------------------
         # TRACK 2: Skip some points
         #----------------------------------------------------------------------
-        if (self.trackNo == 2):
-            if (next_waypoint == 44):
-                next_waypoint = 45
+        # if (self.trackNo == 2):
+        #     if (next_waypoint == 44):
+        #         next_waypoint = 45
     
-            if (next_waypoint == 40):
-                next_waypoint = 41
+        #     if (next_waypoint == 40):
+        #         next_waypoint = 41
     
-            if (next_waypoint == 36):
-                next_waypoint = 37
+        #     if (next_waypoint == 21):
+        #         next_waypoint = 22
     
-            if (next_waypoint == 21):
-                next_waypoint = 22
-    
-            if (next_waypoint == 12):
-                next_waypoint = 13
+        #     if (next_waypoint == 12):
+        #         next_waypoint = 13
+
+        if (next_waypoint == 36):
+            next_waypoint = 37
+
 
         #----------------------------------------------------------------------
         # target calculation
@@ -457,8 +454,8 @@ class MatthijsRacer(Bot):
         else:
             steering = 0
 
-        if (abs(self.slipAngleDeg) > 20):
-            throttle = 0
+        # if (abs(self.slipAngleDeg) > 20):
+        #     throttle = 0
 
 
         #----------------------------------------------------------------------
