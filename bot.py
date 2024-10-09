@@ -85,6 +85,9 @@ class MatthijsRacer(Bot):
         return
     
     def bochtenAfsnijden_v2(self):
+        
+        scherpebocht = False
+        
         for i in range(0, self.sectionCount):
             # print (self.relativeVectors[i])
         
@@ -94,9 +97,22 @@ class MatthijsRacer(Bot):
             # print (lengte1)
             # print (lengte2)
             
-            relAngle1 = abs(self.absAngles[(i-1) % self.sectionCount] - self.absAngles[(i+0) % self.sectionCount])
-            relAngle2 = abs(self.absAngles[(i+0) % self.sectionCount] - self.absAngles[(i+1) % self.sectionCount])
-            relAngle3 = abs(self.absAngles[(i+1) % self.sectionCount] - self.absAngles[(i+2) % self.sectionCount])
+            # relAngle1 = abs(self.absAngles[(i-1) % self.sectionCount] - self.absAngles[(i+0) % self.sectionCount])
+            # relAngle2 = abs(self.absAngles[(i+0) % self.sectionCount] - self.absAngles[(i+1) % self.sectionCount])
+            # relAngle3 = abs(self.absAngles[(i+1) % self.sectionCount] - self.absAngles[(i+2) % self.sectionCount])
+
+            relAngle1 = abs(self.absAngles[(i+0) % self.sectionCount] - self.absAngles[(i+1) % self.sectionCount])
+            relAngle2 = abs(self.absAngles[(i+1) % self.sectionCount] - self.absAngles[(i+2) % self.sectionCount])
+            relAngle3 = abs(self.absAngles[(i+2) % self.sectionCount] - self.absAngles[(i+3) % self.sectionCount])
+
+            if (relAngle1 > 180):
+                relAngle1 = 360 - relAngle1
+                
+            if (relAngle2 > 180):
+                relAngle2 = 360 - relAngle2
+
+            if (relAngle3 > 180):
+                relAngle3 = 360 - relAngle3
 
 
             print(f"section = {i}, angle1 = {relAngle1:.1f}, angle2 = {relAngle2:.1f}, angle3 = {relAngle3:.1f}")
@@ -105,8 +121,19 @@ class MatthijsRacer(Bot):
             # lange bocht
             if (relAngle1 > 30) and (relAngle2 > 30) and (relAngle3 > 30):
                 magic = -50
-            # elif (relAngle1 > 10) and (relAngle2 > 30) and (relAngle3 > 30):
-            #     magic = -10
+                scherpebocht = True
+
+            elif (relAngle1 > 20) and (relAngle2 > 20) and (relAngle3 > 20):
+                magic = -40
+                scherpebocht = True
+
+            # elif (relAngle1 > 20) and (relAngle2 > 20) and (relAngle3 < 20):
+            #     magic = 30
+            #     scherpebocht = False
+
+            elif (scherpebocht):
+                magic = 30
+
             else:
                 magic = 0
         
@@ -249,7 +276,8 @@ class MatthijsRacer(Bot):
                 self.curveType[index] = "T"
                 
                 if (relAngle > 180):
-                    relAngle = relAngle - 360
+                    # relAngle = relAngle - 360
+                    relAngle = 360 - relAngle
                 
                 self.curveAngleChange[index] = relAngle
                     
@@ -306,6 +334,10 @@ class MatthijsRacer(Bot):
         A = 1.3/10000
         B = 0.013
         
+        fullSpeed = 520;
+        A = 1.8/10000
+        B = 0.013
+
         x = abs(self.curveAngleChange[sectionIndex])
 
         _angleEffect = A * x**2 + B * x
@@ -345,7 +377,7 @@ class MatthijsRacer(Bot):
         # if (self.distanceToTarget <40):
             next_waypoint = (next_waypoint + 1) % self.sectionCount
 
-        elif (self.distanceToTarget < 80):
+        elif (self.distanceToTarget < 75):
         # elif (self.distanceToTarget < 60):
             if (abs(self.slipAngleDeg) < 20):
                 next_waypoint = (next_waypoint + 1) % self.sectionCount
