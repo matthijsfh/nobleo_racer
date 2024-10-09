@@ -143,11 +143,11 @@ class MatthijsRacer(Bot):
         #----------------------------------------------------------------------
         self.trackNo = 0
         
-        # if (self.sectionCount == 47):
-        #     self.trackNo = 1
+        if (self.sectionCount == 47):
+            self.trackNo = 1
             
-        # if (self.sectionCount == 50):
-        #     self.trackNo = 2
+        if (self.sectionCount == 50):
+            self.trackNo = 2
 
         #----------------------------------------------------------------------
         # Bochtjes afsnijden met nieuwe curve.
@@ -263,7 +263,7 @@ class MatthijsRacer(Bot):
 
         fullSpeed = 520;
         A = 1.2/10000
-        B = 0.0135
+        B = 0.013
         
         x = abs(self.curveAngleChange[sectionIndex])
 
@@ -299,58 +299,19 @@ class MatthijsRacer(Bot):
         # Doet bij track 2 veel met al die korte bochten.
         # 60 werkt overal.
         #----------------------------------------------------------------------
-        # Track 1
-        # if (self.distanceToTarget < 60): 
         if (self.distanceToTarget < 60):
             next_waypoint = (next_waypoint + 1) % self.sectionCount
 
-        elif (self.distanceToTarget < 70):
-            if (abs(self.slipAngleDeg) < 20):
-                next_waypoint = (next_waypoint + 1) % self.sectionCount
+        if (self.trackNo == 1):
+            if (self.distanceToTarget >= 60) and (self.distanceToTarget < 70) :
+                if (abs(self.slipAngleDeg) < 20):
+                    next_waypoint = (next_waypoint + 1) % self.sectionCount
                 
-        #----------------------------------------------------------------------
-        # TRACK 1: Skip some points
-        #----------------------------------------------------------------------
-        # if (self.trackNo == 1):
-    
-        #     if (next_waypoint == 36):
-        #         next_waypoint = 37
-    
-        #     if (next_waypoint == 33):
-        #         next_waypoint = 34
-    
-        #     if (next_waypoint == 28):
-        #         next_waypoint = 29
-    
-        #     if (next_waypoint == 25):
-        #         next_waypoint = 26
-    
-        #     if (next_waypoint == 18):
-        #         next_waypoint = 19
-    
-        #     if (next_waypoint == 8):
-        #         next_waypoint = 9
-
-        #----------------------------------------------------------------------
-        # TRACK 2: Skip some points
-        #----------------------------------------------------------------------
-        # if (self.trackNo == 2):
-        # if (next_waypoint == 44):
-        #     next_waypoint = 45
-    
-        #     if (next_waypoint == 40):
-        #         next_waypoint = 41
-    
-        #     if (next_waypoint == 21):
-        #         next_waypoint = 22
-    
-        #     if (next_waypoint == 12):
-        #         next_waypoint = 13
-
-        # Nodig voor track 2.
-        if (next_waypoint == 36):
-            next_waypoint = 37
-
+        if (self.trackNo == 2):
+            # Nodig voor track 2.
+            if (next_waypoint == 36):
+                next_waypoint = 37
+                
 
         #----------------------------------------------------------------------
         # target calculation
