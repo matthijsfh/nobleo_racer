@@ -19,19 +19,20 @@ from .racecar.racecar import racecar
 
 DRAW_CARAVAN = True
 
-DEBUG = False
-DEBUG_TRACK = False
-DEBUG_CURVES= False
-DEBUG_CAR = False
-DEBUG_PLOT = False
-BOCHT_AFSNIJDEN = False
-
 # DEBUG = False
 # DEBUG_TRACK = False
 # DEBUG_CURVES= False
 # DEBUG_CAR = False
-# DEBUG_PLOT = True
+# DEBUG_PLOT = False
 # BOCHT_AFSNIJDEN = False
+
+DEBUG = False
+DEBUG_TRACK = False
+DEBUG_CURVES= False
+DEBUG_CAR = False
+DEBUG_PLOT = True
+DEBUG_TRACK_PLOT = True
+BOCHT_AFSNIJDEN = True
 
 class MatthijsRacer(Bot):
     @property
@@ -69,8 +70,7 @@ class MatthijsRacer(Bot):
             print (lengte1)
             print (lengte2)
             
-            # magic = 50
-            magic = 60
+            magic = 50
         
             # Calculate new point on the line close to the exit
             newPoint1 = Vector2(self.relativeVectors[(i-0) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
@@ -154,33 +154,33 @@ class MatthijsRacer(Bot):
         # Werkt niet lekke. 
         # Bochten worden er krapper van. Dat werkt niet lekker.
         #----------------------------------------------------------------------
-        # self.myNewCoordinates = [self.coordinates[i] for i in range(len(self.coordinates))]
+        self.myNewCoordinates = [self.coordinates[i] for i in range(len(self.coordinates))]
         
-        # if (BOCHT_AFSNIJDEN):
+        if (BOCHT_AFSNIJDEN):
         
-        #     self.bochtenAfsnijden()
+            self.bochtenAfsnijden()
             
-        #     if (DEBUG_TRACK): 
-        #         print('----------------------------------------')
-        #         print(len(self.coordinates))
-        #         print(self.coordinates)
-        #         print('----------------------------------------')
-        #         print(len(self.myNewCoordinates))
-        #         print(self.myNewCoordinates)
-        #         print('----------------------------------------')
+            if (DEBUG_TRACK): 
+                print('----------------------------------------')
+                print(len(self.coordinates))
+                print(self.coordinates)
+                print('----------------------------------------')
+                print(len(self.myNewCoordinates))
+                print(self.myNewCoordinates)
+                print('----------------------------------------')
     
-        #     # Met nieuwe punten, alles herberekenen
-        #     self.coordinates = [self.myNewCoordinates[i] for i in range(len(self.myNewCoordinates))]
+            # Met nieuwe punten, alles herberekenen
+            self.coordinates = [self.myNewCoordinates[i] for i in range(len(self.myNewCoordinates))]
             
-        #     # Opnieuw
-        #     # Dus 1 langer dan sectionCount
-        #     self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
+            # Opnieuw
+            # Dus 1 langer dan sectionCount
+            self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
     
-        #     # Calculate angles for each section
-        #     self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
+            # Calculate angles for each section
+            self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
             
-        #     # Lenght of each section
-        #     self.absLength = [math.sqrt(x**2 + y**2) for x, y in self.relativeVectors]
+            # Lenght of each section
+            self.absLength = [math.sqrt(x**2 + y**2) for x, y in self.relativeVectors]
 
 
         #----------------------------------------------------------------------
@@ -478,7 +478,7 @@ class MatthijsRacer(Bot):
     #----------------------------------------------------------------------
     def draw(self, map_scaled, zoom):
         
-        if (DEBUG_TRACK):
+        if (DEBUG_TRACK_PLOT):
             for i in range(0, self.sectionCount):
                 pygame.draw.line(map_scaled, self._green,
                                   self.myNewCoordinates[i] * zoom,
