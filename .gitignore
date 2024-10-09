@@ -22,3 +22,4 @@ venv.bak/
 # Editors
 .idea/
 .vscode/
+/bot_copy_main.py
