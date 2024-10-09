@@ -19,19 +19,20 @@ from .racecar.racecar import racecar
 
 DRAW_CARAVAN = True
 
-DEBUG = False
-DEBUG_TRACK = False
-DEBUG_CURVES= False
-DEBUG_CAR = False
-DEBUG_PLOT = False
-BOCHT_AFSNIJDEN = False
-
 # DEBUG = False
 # DEBUG_TRACK = False
 # DEBUG_CURVES= False
 # DEBUG_CAR = False
-# DEBUG_PLOT = True
+# DEBUG_PLOT = False
 # BOCHT_AFSNIJDEN = False
+
+DEBUG = False
+DEBUG_CURVES= False
+DEBUG_CAR = False
+DEBUG_PLOT = False
+DEBUG_TRACK = False
+DEBUG_TRACK_PLOT = True
+BOCHT_AFSNIJDEN = True
 
 class MatthijsRacer(Bot):
     @property
@@ -69,8 +70,7 @@ class MatthijsRacer(Bot):
             print (lengte1)
             print (lengte2)
             
-            # magic = 50
-            magic = 60
+            magic = 50
         
             # Calculate new point on the line close to the exit
             newPoint1 = Vector2(self.relativeVectors[(i-0) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
@@ -84,6 +84,43 @@ class MatthijsRacer(Bot):
             
         return
     
+    def bochtenAfsnijden_v2(self):
+        for i in range(0, self.sectionCount):
+            # print (self.relativeVectors[i])
+        
+            lengte1 = self.relativeVectors[(i-0) % self.sectionCount].length()
+            lengte2 = self.relativeVectors[(i+1) % self.sectionCount].length()
+
+            # print (lengte1)
+            # print (lengte2)
+            
+            relAngle1 = abs(self.absAngles[(i-1) % self.sectionCount] - self.absAngles[(i+0) % self.sectionCount])
+            relAngle2 = abs(self.absAngles[(i+0) % self.sectionCount] - self.absAngles[(i+1) % self.sectionCount])
+            relAngle3 = abs(self.absAngles[(i+1) % self.sectionCount] - self.absAngles[(i+2) % self.sectionCount])
+
+
+            print(f"section = {i}, angle1 = {relAngle1:.1f}, angle2 = {relAngle2:.1f}, angle3 = {relAngle3:.1f}")
+
+
+            # lange bocht
+            if (relAngle1 > 30) and (relAngle2 > 30) and (relAngle3 > 30):
+                magic = -50
+            # elif (relAngle1 > 10) and (relAngle2 > 30) and (relAngle3 > 30):
+            #     magic = -10
+            else:
+                magic = 0
+        
+            # Calculate new point on the line close to the exit
+            newPoint1 = Vector2(self.relativeVectors[(i-0) % self.sectionCount] * (1 -magic / lengte1) + self.track.lines[(i-1) % (self.sectionCount)])
+            newPoint2 = Vector2(self.relativeVectors[(i+1) % self.sectionCount] * (magic / lengte2)  + self.track.lines[i])
+    
+            self.curve = self.bezier_curve(newPoint1, self.track.lines[i], newPoint2, 3)
+            
+            tmp = Vector2(self.curve[1][0], self.curve[1][1])
+
+            self.myNewCoordinates[i] = Vector2(tmp)
+        return
+
     
     def __init__(self, track):
         super().__init__(track)
@@ -95,9 +132,6 @@ class MatthijsRacer(Bot):
         self._red = pygame.Color(255, 0, 0, 50)
         self._blue = pygame.Color(0, 0, 255, 50)
         
-        self.max_velocity = 500.0
-        self.min_velocity = 140.0
-         
         if DRAW_CARAVAN:
             self._caravan = pygame.image.load(
                 os.path.dirname(__file__) + '/caravan/caravan.png')
@@ -151,36 +185,37 @@ class MatthijsRacer(Bot):
 
         #----------------------------------------------------------------------
         # Bochtjes afsnijden met nieuwe curve.
-        # Werkt niet lekke. 
+        # Werkt niet lekker. 
         # Bochten worden er krapper van. Dat werkt niet lekker.
         #----------------------------------------------------------------------
-        # self.myNewCoordinates = [self.coordinates[i] for i in range(len(self.coordinates))]
+        self.myNewCoordinates = [self.coordinates[i] for i in range(len(self.coordinates))]
         
-        # if (BOCHT_AFSNIJDEN):
+        if (BOCHT_AFSNIJDEN):
         
-        #     self.bochtenAfsnijden()
+            # self.bochtenAfsnijden()
+            self.bochtenAfsnijden_v2()
             
-        #     if (DEBUG_TRACK): 
-        #         print('----------------------------------------')
-        #         print(len(self.coordinates))
-        #         print(self.coordinates)
-        #         print('----------------------------------------')
-        #         print(len(self.myNewCoordinates))
-        #         print(self.myNewCoordinates)
-        #         print('----------------------------------------')
+            if (DEBUG_TRACK): 
+                print('----------------------------------------')
+                print(len(self.coordinates))
+                print(self.coordinates)
+                print('----------------------------------------')
+                print(len(self.myNewCoordinates))
+                print(self.myNewCoordinates)
+                print('----------------------------------------')
     
-        #     # Met nieuwe punten, alles herberekenen
-        #     self.coordinates = [self.myNewCoordinates[i] for i in range(len(self.myNewCoordinates))]
+            # Met nieuwe punten, alles herberekenen
+            self.coordinates = [self.myNewCoordinates[i] for i in range(len(self.myNewCoordinates))]
             
-        #     # Opnieuw
-        #     # Dus 1 langer dan sectionCount
-        #     self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
+            # Opnieuw
+            # Dus 1 langer dan sectionCount
+            self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
     
-        #     # Calculate angles for each section
-        #     self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
+            # Calculate angles for each section
+            self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
             
-        #     # Lenght of each section
-        #     self.absLength = [math.sqrt(x**2 + y**2) for x, y in self.relativeVectors]
+            # Lenght of each section
+            self.absLength = [math.sqrt(x**2 + y**2) for x, y in self.relativeVectors]
 
 
         #----------------------------------------------------------------------
@@ -209,14 +244,14 @@ class MatthijsRacer(Bot):
                 self.curveAngleChange[index] = 0
         
             else:
-                tmp_angle = self.absAngles[index] - self.absAngles[index - 1]
+                relAngle = self.absAngles[index] - self.absAngles[index - 1]
                 
                 self.curveType[index] = "T"
                 
-                if (tmp_angle > 180):
-                    tmp_angle = tmp_angle - 360
+                if (relAngle > 180):
+                    relAngle = relAngle - 360
                 
-                self.curveAngleChange[index] = tmp_angle
+                self.curveAngleChange[index] = relAngle
                     
 
             if (DEBUG_TRACK):
@@ -256,16 +291,20 @@ class MatthijsRacer(Bot):
         # A = 1.2/10000
         # B = 0.0125
 
-        # Goed voor track1
-        fullSpeed = 520;
-        A = 1.2/10000
-        B = 0.013
-
-        # # Track 2
+        # # Goed voor track1 zonder afsnijden
         # fullSpeed = 520;
         # A = 1.2/10000
         # B = 0.013
 
+        # # Track 2zonder afsnijden
+        # fullSpeed = 520;
+        # A = 1.2/10000
+        # B = 0.013
+
+        # Goed voor track1 met afsnijden
+        fullSpeed = 520;
+        A = 1.3/10000
+        B = 0.013
         
         x = abs(self.curveAngleChange[sectionIndex])
 
@@ -302,11 +341,12 @@ class MatthijsRacer(Bot):
         # 60 werkt overal.
         #----------------------------------------------------------------------
         # Track 1
-        # if (self.distanceToTarget < 60): 
         if (self.distanceToTarget < 60):
+        # if (self.distanceToTarget <40):
             next_waypoint = (next_waypoint + 1) % self.sectionCount
 
-        elif (self.distanceToTarget < 70):
+        elif (self.distanceToTarget < 80):
+        # elif (self.distanceToTarget < 60):
             if (abs(self.slipAngleDeg) < 20):
                 next_waypoint = (next_waypoint + 1) % self.sectionCount
                 
@@ -456,6 +496,9 @@ class MatthijsRacer(Bot):
         else:
             steering = 0
 
+        #----------------------------------------------------------------------
+        # Slipping
+        #----------------------------------------------------------------------
         # if (abs(self.slipAngleDeg) > 20):
         #     throttle = 0
 
@@ -519,7 +562,7 @@ class MatthijsRacer(Bot):
     #----------------------------------------------------------------------
     def draw(self, map_scaled, zoom):
         
-        if (DEBUG_TRACK):
+        if (DEBUG_TRACK_PLOT):
             for i in range(0, self.sectionCount):
                 pygame.draw.line(map_scaled, self._green,
                                   self.myNewCoordinates[i] * zoom,
