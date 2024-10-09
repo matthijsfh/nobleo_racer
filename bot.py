@@ -261,11 +261,9 @@ class MatthijsRacer(Bot):
         A = 1.2/10000
         B = 0.013
 
-        # # Track 2
-        # fullSpeed = 520;
-        # A = 1.2/10000
-        # B = 0.013
-
+        fullSpeed = 520;
+        A = 1.2/10000
+        B = 0.0135
         
         x = abs(self.curveAngleChange[sectionIndex])
 
@@ -449,9 +447,9 @@ class MatthijsRacer(Bot):
         # else:
         #     steering = -1
 
-        if angle > 5:
+        if angle > 2:
             steering = 1
-        elif angle < -5:
+        elif angle < -2:
             steering = -1
         else:
             steering = 0
