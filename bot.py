@@ -209,14 +209,14 @@ class MatthijsRacer(Bot):
                 self.curveAngleChange[index] = 0
         
             else:
-                tmp_angle = self.absAngles[index] - self.absAngles[index - 1]
+                relAngle = self.absAngles[index] - self.absAngles[index - 1]
                 
                 self.curveType[index] = "T"
                 
-                if (tmp_angle > 180):
-                    tmp_angle = tmp_angle - 360
+                if (relAngle > 180):
+                    relAngle = 360 - relAngle
                 
-                self.curveAngleChange[index] = tmp_angle
+                self.curveAngleChange[index] = relAngle
                     
 
             if (DEBUG_TRACK):
