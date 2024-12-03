@@ -31,8 +31,8 @@ fullSpeed = 528.6129
 
 DRAW_CARAVAN = True
 DEBUG = False
-DEBUG_TRACK = False
-DEBUG_CURVES = False
+DEBUG_TRACK = True
+DEBUG_CURVES = True
 DEBUG_CAR = False
 DEBUG_PLOT = False
 DEBUG_TRACK_PLOT = False
@@ -264,6 +264,13 @@ class MatthijsRacer(Bot):
 
             i = 43 - 1
             self.track.lines[i][1] = self.track.lines[i][1] - 10
+
+
+        if (self.sectionCount >= 65) and (self.sectionCount <= 70):
+            self.trackNo = 3
+
+            i = 13
+            self.track.lines[i][0] = self.track.lines[i][0] - 10
 
         # ----------------------------------------------------------------------
         # All coordinates including last one + list + next one.
