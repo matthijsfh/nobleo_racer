@@ -244,25 +244,25 @@ class MatthijsRacer(Bot):
         if (self.sectionCount >= 45) and (self.sectionCount <= 48):
             self.trackNo = 1
 
-            i = 43
+            i = 43 - 1
             self.track.lines[i][0] = self.track.lines[i][0] + 15
             self.track.lines[i][1] = self.track.lines[i][1]
 
-            i = 44
+            i = 44 - 1
             self.track.lines[i][0] = self.track.lines[i][0] + 15
             self.track.lines[i][1] = self.track.lines[i][1]
 
         if (self.sectionCount >= 49) and (self.sectionCount <= 51):
             self.trackNo = 2
-            
-            i = 35
+
+            i = 35 - 1
             self.track.lines[i][1] = self.track.lines[i][1] - 10
 
-            i = 36
+            i = 36 - 1
             self.track.lines[i][0] = self.track.lines[i][0] - 10
             self.track.lines[i][1] = self.track.lines[i][1] - 10
 
-            i = 43
+            i = 43 - 1
             self.track.lines[i][1] = self.track.lines[i][1] - 10
 
         # ----------------------------------------------------------------------
@@ -464,7 +464,7 @@ class MatthijsRacer(Bot):
         # ----------------------------------------------------------------------
         if self.distanceToTarget < 60:
             next_waypoint = (next_waypoint + 1) % self.sectionCount
-        
+
         # ----------------------------------------------------------------------
         # Extra de bocht doorkijken werkt bij track 1, maar bij 2 vliegt auto uit de bocht.
         # ----------------------------------------------------------------------
