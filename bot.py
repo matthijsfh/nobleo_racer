@@ -34,7 +34,7 @@ DEBUG = False
 DEBUG_TRACK = False
 DEBUG_CURVES = False
 DEBUG_CAR = False
-DEBUG_PLOT = False
+DEBUG_PLOT = True
 DEBUG_TRACK_PLOT = False
 BOCHT_AFSNIJDEN = False
 
@@ -66,9 +66,7 @@ class MatthijsRacer(Bot):
 
     def bezier_curve(self, p0, p1, p2, num_points=10):
         """Generates a quadratic Bezier curve given 3 control points."""
-        t = np.linspace(0, 1, num_points).reshape(
-            -1, 1
-        )  # Reshape to column vector
+        t = np.linspace(0, 1, num_points).reshape(-1, 1)  # Reshape to column vector
         curve = (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t**2 * p2
         return curve
 
@@ -79,12 +77,8 @@ class MatthijsRacer(Bot):
             # print(track_lines[i])
             print(self.relativeVectors[i])
 
-            lengte1 = self.relativeVectors[
-                (i - 0) % self.sectionCount
-            ].length()
-            lengte2 = self.relativeVectors[
-                (i + 1) % self.sectionCount
-            ].length()
+            lengte1 = self.relativeVectors[(i - 0) % self.sectionCount].length()
+            lengte2 = self.relativeVectors[(i + 1) % self.sectionCount].length()
 
             print(lengte1)
             print(lengte2)
@@ -93,19 +87,15 @@ class MatthijsRacer(Bot):
 
             # Calculate new point on the line close to the exit
             newPoint1 = Vector2(
-                self.relativeVectors[(i - 0) % self.sectionCount]
-                * (1 - magic / lengte1)
+                self.relativeVectors[(i - 0) % self.sectionCount] * (1 - magic / lengte1)
                 + self.track.lines[(i - 1) % (self.sectionCount)]
             )
             newPoint2 = Vector2(
-                self.relativeVectors[(i + 1) % self.sectionCount]
-                * (magic / lengte2)
+                self.relativeVectors[(i + 1) % self.sectionCount] * (magic / lengte2)
                 + self.track.lines[i]
             )
 
-            self.curve = self.bezier_curve(
-                newPoint1, self.track.lines[i], newPoint2, 3
-            )
+            self.curve = self.bezier_curve(newPoint1, self.track.lines[i], newPoint2, 3)
 
             tmp = Vector2(self.curve[1][0], self.curve[1][1])
 
@@ -119,12 +109,8 @@ class MatthijsRacer(Bot):
         for i in range(0, self.sectionCount):
             # print (self.relativeVectors[i])
 
-            lengte1 = self.relativeVectors[
-                (i - 0) % self.sectionCount
-            ].length()
-            lengte2 = self.relativeVectors[
-                (i + 1) % self.sectionCount
-            ].length()
+            lengte1 = self.relativeVectors[(i - 0) % self.sectionCount].length()
+            lengte2 = self.relativeVectors[(i + 1) % self.sectionCount].length()
 
             # print (lengte1)
             # print (lengte2)
@@ -180,19 +166,15 @@ class MatthijsRacer(Bot):
 
             # Calculate new point on the line close to the exit
             newPoint1 = Vector2(
-                self.relativeVectors[(i - 0) % self.sectionCount]
-                * (1 - magic / lengte1)
+                self.relativeVectors[(i - 0) % self.sectionCount] * (1 - magic / lengte1)
                 + self.track.lines[(i - 1) % (self.sectionCount)]
             )
             newPoint2 = Vector2(
-                self.relativeVectors[(i + 1) % self.sectionCount]
-                * (magic / lengte2)
+                self.relativeVectors[(i + 1) % self.sectionCount] * (magic / lengte2)
                 + self.track.lines[i]
             )
 
-            self.curve = self.bezier_curve(
-                newPoint1, self.track.lines[i], newPoint2, 3
-            )
+            self.curve = self.bezier_curve(newPoint1, self.track.lines[i], newPoint2, 3)
 
             tmp = Vector2(self.curve[1][0], self.curve[1][1])
 
@@ -213,9 +195,7 @@ class MatthijsRacer(Bot):
         self.min_velocity = 140.0
 
         if DRAW_CARAVAN:
-            self._caravan = pygame.image.load(
-                os.path.dirname(__file__) + "/caravan/caravan.png"
-            )
+            self._caravan = pygame.image.load(os.path.dirname(__file__) + "/caravan/caravan.png")
 
         self.firstPass = True
         self.firstDraw = True
@@ -269,41 +249,27 @@ class MatthijsRacer(Bot):
         # All coordinates including last one + list + next one.
         # Dus 2 langer dan sectionCount
         # ----------------------------------------------------------------------
-        self.coordinates = (
-            [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
-        )
+        self.coordinates = [self.track.lines[-1]] + self.track.lines + [self.track.lines[0]]
 
         # Dus 1 langer dan sectionCount
-        self.relativeVectors = [
-            c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)
-        ]
+        self.relativeVectors = [c1 - c0 for c0, c1 in itertools.pairwise(self.coordinates)]
 
         # Calculate angles for each section
-        self.absAngles = [
-            math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors
-        ]
+        self.absAngles = [math.degrees(math.atan2(y, x)) for x, y in self.relativeVectors]
 
         # Lenght of each section
-        self.absLength = [
-            math.sqrt(x**2 + y**2) for x, y in self.relativeVectors
-        ]
+        self.absLength = [math.sqrt(x**2 + y**2) for x, y in self.relativeVectors]
 
         if DEBUG_TRACK:
-            for index, (vector, angle) in enumerate(
-                zip(self.relativeVectors, self.absAngles)
-            ):
-                print(
-                    f"Index: {index}, Vector: {vector}, Angle: {angle:.2f} deg"
-                )
+            for index, (vector, angle) in enumerate(zip(self.relativeVectors, self.absAngles)):
+                print(f"Index: {index}, Vector: {vector}, Angle: {angle:.2f} deg")
 
         # ----------------------------------------------------------------------
         # Bochtjes afsnijden met nieuwe curve.
         # Werkt niet lekke.
         # Bochten worden er krapper van. Dat werkt niet lekker.
         # ----------------------------------------------------------------------
-        self.myNewCoordinates = [
-            self.coordinates[i] for i in range(len(self.coordinates))
-        ]
+        self.myNewCoordinates = [self.coordinates[i] for i in range(len(self.coordinates))]
 
         # if (BOCHT_AFSNIJDEN):
 
@@ -335,12 +301,8 @@ class MatthijsRacer(Bot):
         # Debug
         # ----------------------------------------------------------------------
         if DEBUG_TRACK:
-            for index, (vector, angle) in enumerate(
-                zip(self.relativeVectors, self.absAngles)
-            ):
-                print(
-                    f"Index: {index}, Vector: {vector}, Angle: {angle:.2f} deg"
-                )
+            for index, (vector, angle) in enumerate(zip(self.relativeVectors, self.absAngles)):
+                print(f"Index: {index}, Vector: {vector}, Angle: {angle:.2f} deg")
 
         if DEBUG_TRACK:
             print(len(self.coordinates))
@@ -378,8 +340,7 @@ class MatthijsRacer(Bot):
 
     def computeBrakeDistance(self, sectionIndex: int, counter: int):
         distance = (
-            self.tmp_position
-            - self.coordinates[(sectionIndex + 1) % self.sectionCount]
+            self.tmp_position - self.coordinates[(sectionIndex + 1) % self.sectionCount]
         ).length()
 
         if counter >= 2:
@@ -436,9 +397,7 @@ class MatthijsRacer(Bot):
 
         return result
 
-    def compute_commands(
-        self, next_waypoint: int, position: Transform, velocity: Vector2
-    ) -> Tuple:
+    def compute_commands(self, next_waypoint: int, position: Transform, velocity: Vector2) -> Tuple:
         # ----------------------------------------------------------------------
         # Set the racecar pose
         # Set the caravan pose
@@ -451,9 +410,7 @@ class MatthijsRacer(Bot):
         self.absVelocity = velocity.length()
 
         # Orgninele code
-        self.distanceToTarget = abs(
-            (self.track.lines[next_waypoint] - position.p).length()
-        )
+        self.distanceToTarget = abs((self.track.lines[next_waypoint] - position.p).length())
 
         # ----------------------------------------------------------------------
         # Vreemde code die veel doet.
@@ -548,9 +505,7 @@ class MatthijsRacer(Bot):
         # Die _sectionMaxVelocity voorkomt dat de auto uit de bocht vliegt bij de het laatste segment.
         # Geen idee waarom
         tmpTargetVelocity = min(
-            min(
-                min(allowed_velocity1, _sectionMaxVelocity), allowed_velocity2
-            ),
+            min(min(allowed_velocity1, _sectionMaxVelocity), allowed_velocity2),
             allowed_velocity3,
         )
 
@@ -706,18 +661,14 @@ class MatthijsRacer(Bot):
 
             # Plot the caravan.
             caravanZoom = 0.4 * zoom
-            caravan_image = pygame.transform.rotozoom(
-                self._caravan, -_tmpCaravanAngle, caravanZoom
-            )
+            caravan_image = pygame.transform.rotozoom(self._caravan, -_tmpCaravanAngle, caravanZoom)
 
             angle = Transform(
                 _tmpCaravanAngle / 180 * math.pi,
                 [_tmpTrekhaak[0], _tmpTrekhaak[1]],
             )
 
-            caravan_rect = caravan_image.get_rect(
-                center=(angle.p + angle.M * Vector2(0, 0)) * zoom
-            )
+            caravan_rect = caravan_image.get_rect(center=(angle.p + angle.M * Vector2(0, 0)) * zoom)
             map_scaled.blit(caravan_image, caravan_rect)
 
         return
